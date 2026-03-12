@@ -3,117 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chrono — Gestion Routier</title>
+    <title>Mon Chrono</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; overflow-x: hidden; }
-        .glass-card { background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1.5rem; }
-        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 900; transition: all 0.2s; cursor: pointer; }
+        body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
+        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
-        .sunday-ferie { border: 2px solid #ef4444; }
-        .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; position: fixed; inset: 0; right: auto; width: 260px; height: 100%; z-index: 100; background: #0f172a; border-right: 1px solid #1e293b; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
         .sidebar.open { transform: translateX(0); }
-        .tab-active { background: #ff6b35 !important; color: white !important; border-color: #ff6b35 !important; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; display: none; }
+        .tab-active { background: #ff6b35 !important; color: white !important; }
         .hidden { display: none; }
     </style>
 </head>
-<body class="pb-10">
+<body>
+
+    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
 
     <div id="sidebar" class="sidebar p-6">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-orange-500 font-black italic uppercase">Mon Chrono</h2>
-            <button onclick="toggleSidebar()" class="text-slate-500 text-xl">✕</button>
+        <div class="flex justify-between items-center mb-10">
+            <h2 class="text-orange-500 font-black italic uppercase text-xl">Mon Chrono</h2>
+            <button onclick="toggleSidebar()" class="text-2xl">✕</button>
         </div>
-        <div class="px-4 py-3 mb-6 bg-slate-800/40 rounded-2xl border border-white/5">
-            <p id="cardNameSidebar" class="text-sm font-black text-white uppercase italic">Nom Conducteur</p>
-            <p class="text-[9px] text-orange-500 font-bold uppercase tracking-widest mt-1">Chauffeur Routier</p>
+        
+        <div class="mb-8 p-4 bg-slate-800/50 rounded-2xl border border-white/5">
+            <p id="sideName" class="text-sm font-black uppercase italic">Nom Conducteur</p>
+            <p class="text-[10px] text-orange-500 font-bold uppercase tracking-widest">Chauffeur Routier</p>
         </div>
-        <nav class="space-y-2">
-            <button onclick="navTo('dashboard')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center gap-3 font-bold text-sm text-white">📊 Tableau de bord</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center gap-3 font-bold text-sm text-white">🚛 Activités</button>
-            <button onclick="navTo('infractions')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center gap-3 font-bold text-sm text-white">⚠️ Infractions</button>
-            <div class="h-[1px] bg-slate-800 my-4"></div>
-            <button onclick="navTo('import')" class="w-full text-left p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center gap-3 font-bold text-sm text-orange-500 font-black">📥 IMPORTER</button>
+
+        <nav class="flex flex-col gap-2">
+            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold">📊 Tableau de bord</button>
+            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold">🚛 Activités</button>
+            <button onclick="navTo('infractions')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold">⚠️ Infractions</button>
+            <hr class="border-slate-800 my-2">
+            <button onclick="navTo('import')" class="w-full text-left p-4 bg-orange-500/10 text-orange-500 rounded-xl font-black italic">📥 IMPORTER CARTE</button>
         </nav>
     </div>
-    <div id="overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]"></div>
 
-    <header class="p-6 pb-2 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div onclick="toggleSidebar()" class="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center shadow-lg text-xl cursor-pointer">🚛</div>
-            <div>
-                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
-                <p id="headerName" class="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-widest italic leading-none">Chauffeur Routier</p>
-            </div>
+    <header class="p-6 flex items-center gap-4">
+        <button onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center text-2xl shadow-lg">🚛</button>
+        <div>
+            <h1 class="text-xl font-black italic uppercase leading-none text-white">Mon <span class="text-orange-500">Chrono</span></h1>
+            <p id="headName" class="text-[10px] text-slate-500 font-bold uppercase mt-1 italic">Chauffeur Routier</p>
         </div>
     </header>
 
-    <main id="view-dashboard" class="page-view px-6 mt-4">
-        <div class="flex gap-2">
-            <button id="btnTabCal" onclick="switchTab('cal')" class="flex-1 bg-slate-800 py-3 rounded-full text-[10px] font-black border border-slate-700 uppercase tab-active">📅 Calendrier</button>
-            <button id="btnTabTachy" onclick="switchTab('tachy')" class="flex-1 bg-slate-800 py-3 rounded-full text-[10px] font-black border border-slate-700 uppercase">📑 Tachygraphe</button>
-        </div>
-
-        <div id="container-cal" class="mt-8">
-            <div class="glass-card p-5">
-                <h3 class="text-sm font-black italic text-slate-400 uppercase mb-4 tracking-tight">Mars 2026</h3>
-                <div class="grid grid-cols-7 gap-3 text-[9px] text-slate-600 font-black mb-3 uppercase text-center">
-                    <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span class="text-red-500">D</span>
-                </div>
-                <div id="gridMars" class="grid grid-cols-7 gap-3"></div>
+    <main class="px-6">
+        <div id="view-dashboard" class="page-view">
+            <div class="flex gap-2 mb-6">
+                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase tab-active">Calendrier</button>
+                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase">Tachygraphe</button>
             </div>
-        </div>
 
-        <div id="container-tachy" class="mt-8 hidden">
-            <div class="glass-card overflow-hidden">
-                <table class="w-full text-left text-[11px]">
-                    <thead class="bg-slate-800/50 text-slate-500 font-bold uppercase">
-                        <tr><th class="p-4 border-b border-slate-700">Date</th><th class="p-4 border-b border-slate-700 text-orange-500">Service</th><th class="p-4 border-b border-slate-700 text-blue-400 text-right">Nuit</th></tr>
+            <div id="sec-cal" class="glass-card p-4">
+                <h3 class="text-xs font-black uppercase text-slate-500 mb-4 italic">Mars 2026</h3>
+                <div id="grid" class="grid grid-cols-7 gap-2 text-center"></div>
+            </div>
+
+            <div id="sec-tachy" class="glass-card p-4 hidden">
+                <table class="w-full text-[11px]">
+                    <thead class="text-slate-500 uppercase font-bold border-b border-slate-700">
+                        <tr><th class="py-2 text-left">Date</th><th class="py-2">Service</th><th class="py-2 text-right text-blue-400">Nuit</th></tr>
                     </thead>
-                    <tbody id="tachyTableBody"></tbody>
-                    <tfoot class="bg-slate-900/80 font-black">
-                        <tr class="text-white border-t-2 border-slate-700">
-                            <td class="p-4 uppercase text-slate-500">Total</td>
-                            <td id="totalService" class="p-4 text-orange-500 text-sm">0h00</td>
-                            <td id="totalNuit" class="p-4 text-blue-400 text-sm text-right">0h00</td>
-                        </tr>
-                    </tfoot>
+                    <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
-    </main>
 
-    <div id="dayModal" class="hidden fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onclick="closeModal()"></div>
-        <div class="glass-card w-full max-w-sm p-6 relative border-t-4 border-orange-500">
-            <h3 id="modalDate" class="text-2xl font-black italic text-white uppercase mb-4">DATE</h3>
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                <div class="bg-indigo-500/10 p-4 rounded-2xl border border-indigo-500/20">
-                    <p class="text-[9px] text-indigo-400 font-black uppercase">Service / Nuit</p>
-                    <p class="text-xl font-black">10h30 / 07h20</p>
-                </div>
-                <div class="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20 text-right">
-                    <p class="text-[9px] text-emerald-400 font-black uppercase">Frais</p>
-                    <p id="modalFrais" class="text-xl font-black">22.42€</p>
-                </div>
-            </div>
-            <button onclick="closeModal()" class="w-full py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs">Fermer</button>
+        <div id="view-import" class="page-view hidden">
+            <h2 class="text-xl font-black uppercase italic mb-6">Importation</h2>
+            <button onclick="simulRead()" class="w-full py-6 bg-indigo-600 rounded-3xl font-black uppercase mb-4 shadow-xl">💳 Lire Carte Conducteur</button>
+            <p id="status" class="text-center text-orange-500 font-bold uppercase text-[10px] hidden animate-pulse">Lecture de la puce...</p>
         </div>
-    </div>
 
-    <main id="view-import" class="page-view hidden px-6 mt-6">
-        <h2 class="text-xl font-black italic uppercase mb-6 text-orange-500">📥 Importation</h2>
-        <button onclick="startCardRead()" class="w-full bg-indigo-600 py-6 rounded-3xl font-black uppercase text-xs mb-4">💳 Lire Carte USB</button>
-        <button class="w-full bg-slate-800 py-6 rounded-3xl font-black uppercase text-xs">📂 Charger Fichier</button>
-        <div id="importStatus" class="hidden mt-6 text-center animate-pulse text-orange-500 font-black uppercase text-[10px]">Lecture...</div>
+        <div id="view-activities" class="page-view hidden px-4 py-10 glass-card text-center italic text-slate-500">Flux d'activités bientôt disponible...</div>
+        <div id="view-infractions" class="page-view hidden px-4 py-10 glass-card text-center font-black text-emerald-500 italic">✅ AUCUNE INFRACTION DÉTECTÉE</div>
     </main>
-
-    <main id="view-activities" class="page-view hidden px-6 mt-6"><div class="glass-card p-6">Chronologie active...</div></main>
-    <main id="view-infractions" class="page-view hidden px-6 mt-6"><div class="glass-card p-6 text-center font-black">✅ AUCUNE INFRACTION</div></main>
 
     <script>
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('overlay').classList.toggle
-            
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('overlay');
+            const isOpen = sb.classList.contains('open');
+            sb.classList.toggle('open');
+            ov.style.display = isOpen ? 'none' : 'block';
+        }
+
+        function navTo(id) {
+            document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
+            document.getElementById('view-' + id).classList.remove('hidden');
+            toggleSidebar();
+        }
+
+        function setTab(type) {
+            document.getElementById('sec-cal').classList.toggle('hidden', type !== 'cal');
+            document.getElementById('sec-tachy').classList.toggle('hidden', type !== 'tachy');
+            document.getElementById('btnCal').classList.toggle('tab-active', type === 'cal');
+            document.getElementById('btnTachy').classList.toggle('tab-active', type === 'tachy');
+        }
+
+        function simulRead() {
+            const s = document.getElementById('status');
+            s.classList.remove('hidden');
+            setTimeout(() => {
+                const name = "DYLAN PETIT";
+                document.getElementById('sideName').innerText = name;
+                document.getElementById('headName').innerText = name + " — CHAUFFEUR ROUTIER";
+                s.innerText = "✅ CARTE SYNCHRONISÉE";
+                setTimeout(() => navTo('dashboard'), 1000);
+            }, 2000);
+        }
+
+        function init() {
+            const grid = document.getElementById('grid');
+            const table = document.getElementById('tableBody');
+            grid.innerHTML = ""; table.innerHTML = "";
+
+            for(let d=1; d<=31; d++) {
+                const isOff = (d % 7 == 0 || d % 7 == 6);
+                const day = document.createElement('div');
+                day.className = `day-box ${isOff ? 'rest' : 'worked'}`;
+                day.innerText = d;
+                grid.appendChild(day);
+
+                if(!isOff) {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-white/5";
+                    tr.innerHTML = `<td class="py-3 text-slate-400 font-bold">${d}/03</td><td class="py-3 text-center font-black">10h30</td><td class="py-3 text-right text-blue-400 font-black">07h20</td>`;
+                    table.appendChild(tr);
+                }
+            }
+        }
+        window.onload = init;
+    </script>
+</body>
+</html>
