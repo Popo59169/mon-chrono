@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoScan ACS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col">
+
+    <header class="p-6 bg-slate-800 border-b border-slate-700 text-center shadow-2xl">
+        <h1 class="text-2xl font-black text-blue-400">CHRONOSCAN</h1>
+        <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Lecteur ACS ACR39U</p>
+    </header>
+
+    <main class="flex-grow p-6 flex flex-col items-center">
+        
+        <div id="statusIcon" class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center my-8 border-4 border-slate-700 transition-all">
+            <span id="emoji" class="text-4xl">🔌</span>
+        </div>
+
+        <div id="statusText" class="text-center text-slate-300 mb-8 px-4">
+            Connectez votre lecteur ACS et insérez une carte conducteur.
+        </div>
+
+        <button id="btnConnect" class="w-full max-w-sm bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
+            LIRE LA CARTE
+        </button>
+
+        <div id="resultCard" class="hidden w-full max-w-sm mt-8 bg-slate-800 rounded-2xl p-6 border border-slate-700 animate-bounce-in">
+            <h3 class="text-blue-400 text-xs font-bold uppercase mb-4">Infos Conducteur</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-slate-500 text-xs block">NOM & PRÉNOM</label>
+                    <p id="driverName" class="text-xl font-semibold italic text-white">CHARGEMENT...</p>
+                </div>
+                <div class="pt-4 border-t border-slate-700">
+                    <label class="text-slate-500 text-xs block">N° DE CARTE</label>
+                    <p id="cardNumber" class="font-mono text-green-400 text-lg tracking-wider">XXXXXXXXXXXXX</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4 text-center text-[10px] text-slate-600 uppercase tracking-tighter">
+        100% Gratuit - Usage local uniquement
+    </footer>
+
+    <script>
+        const btn = document.getElementById('btnConnect');
+        const statusText = document.getElementById('statusText');
+        const resultCard = document.getElementById('resultCard');
+
+        // Les filtres pour ton lecteur ACS ACR39U
+        const ACS_VENDOR_ID = 0x072f; 
+
+        btn.addEventListener('click', async () => {
+            try {
+                // 1. Connexion au lecteur
+                const device = await navigator.usb.requestDevice({ 
+                    filters: [{ vendorId: ACS_VENDOR_ID }] 
+                });
+
+                await device.open();
+                await device.selectConfiguration(1);
+                await device.claimInterface(0);
+
+                statusText.innerText = "Lecteur ACS connecté. Lecture en cours...";
+                document.getElementById('statusIcon').classList.replace('border-slate-700', 'border-blue-500');
+                document.getElementById('emoji').innerText = "⏳";
+
+                // --- LOGIQUE SMART CARD (Simplifiée pour le test) ---
+                // Ici on simule la réception des données APDU pour l'exemple
+                // car le décodage binaire brut nécessite une librairie ASN1.
+                
+                setTimeout(() => {
+                    document.getElementById('emoji').innerText = "✅";
+                    statusText.innerText = "Carte lue avec succès !";
+                    resultCard.classList.remove('hidden');
+                    
+                    // Données extraites (Simulation)
+                    document.getElementById('driverName').innerText = "DUPONT Jean-Marc";
+                    document.getElementById('cardNumber').innerText = "F000000458920 00";
+                }, 2000);
+
+            } catch (err) {
+                console.error(err);
+                statusText.innerHTML = `<span class="text-red-400">Erreur : ${err.message}</span>`;
+            }
+        });
+    </script>
+</body>
+</html>
