@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heures Routier Pro v1.6</title>
+    <title>Mon Chrono — Gestion Routier</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; overflow-x: hidden; }
@@ -11,29 +11,36 @@
         .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 900; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
-        .sunday-ferie { border: 2px solid #ef4444; }
-        .tab-active { background: #ff6b35 !important; color: white !important; border-color: #ff6b35 !important; }
         .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
         .sidebar.open { transform: translateX(0); }
         .activity-bar { height: 20px; border-radius: 4px; overflow: hidden; display: flex; }
-        .act-conduite { background: #b91c1c; } /* Rouge foncé */
-        .act-repos { background: #15803d; }    /* Vert */
-        .act-travail { background: #b45309; }  /* Orange/Marron */
-        .act-pause { background: #4338ca; }    /* Bleu/Violet */
+        .act-conduite { background: #b91c1c; }
+        .act-repos { background: #15803d; }
+        .act-travail { background: #b45309; }
+        .act-pause { background: #4338ca; }
         .hidden { display: none; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="pb-10">
 
     <div id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-slate-900 z-[100] p-6 shadow-2xl border-r border-slate-800">
         <div class="flex justify-between items-center mb-10">
-            <h2 class="text-orange-500 font-black italic uppercase">Menu</h2>
+            <h2 class="text-orange-500 font-black italic uppercase">Mon Chrono</h2>
             <button onclick="toggleSidebar()" class="text-slate-500 text-xl">✕</button>
         </div>
-        <nav class="space-y-4">
+        <nav class="space-y-2">
+            <div class="px-4 py-3 mb-6 bg-slate-800/40 rounded-2xl border border-white/5">
+                <p id="cardNameSidebar" class="text-sm font-black text-white uppercase tracking-tight">Nom Conducteur</p>
+                <p class="text-[9px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">Chauffeur Routier</p>
+            </div>
+
             <button onclick="navTo('dashboard')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center gap-3 font-bold text-sm">📊 Tableau de bord</button>
             <button onclick="navTo('activities')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center gap-3 font-bold text-sm">🚛 Activités</button>
-            <button onclick="navTo('infractions')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center gap-3 font-bold text-sm text-red-400">⚠️ Infractions</button>
+            <button onclick="navTo('infractions')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 flex items-center gap-3 font-bold text-sm">⚠️ Infractions</button>
+            <div class="h-[1px] bg-slate-800 my-4"></div>
+            <button onclick="navTo('import')" class="w-full text-left p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center gap-3 font-bold text-sm text-orange-500">📥 Importer données</button>
         </nav>
     </div>
     <div id="overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]"></div>
@@ -42,64 +49,53 @@
         <div class="flex items-center gap-3">
             <div onclick="toggleSidebar()" class="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center shadow-lg text-xl shadow-orange-900/20 cursor-pointer active:scale-90 transition">🚛</div>
             <div>
-                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none">Heures <span class="text-orange-500">Routier</span></h1>
-                <p class="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-widest">Dylan Petit — Expert</p>
+                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
+                <p id="headerName" class="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-widest italic">Chauffeur Routier</p>
             </div>
         </div>
     </header>
 
     <main id="view-dashboard" class="page-view">
         <div class="px-6 flex gap-2 mt-4">
-            <button id="btnTabCal" onclick="switchTab('cal')" class="flex-1 bg-slate-800 py-3 rounded-full text-[10px] font-black border border-slate-700 uppercase tab-active">📅 Calendrier</button>
-            <button id="btnTabTachy" onclick="switchTab('tachy')" class="flex-1 bg-slate-800 py-3 rounded-full text-[10px] font-black border border-slate-700 uppercase">📑 Tachygraphe</button>
+            <button id="btnTabCal" onclick="switchTab('cal')" class="flex-1 bg-slate-800 py-3 rounded-full text-[10px] font-black border border-slate-700 uppercase tab-active transition-all">📅 Calendrier</button>
+            <button id="btnTabTachy" onclick="switchTab('tachy')" class="flex-1 bg-slate-800 py-3 rounded-full text-[10px] font-black border border-slate-700 uppercase transition-all">📑 Tachygraphe</button>
         </div>
+        
         <div id="calContainer" class="px-6 mt-8">
             <div class="glass-card p-5">
-                <h3 class="text-sm font-black italic text-slate-400 uppercase mb-4 tracking-tight">Mars <span class="displayYear text-slate-700 text-xs">2026</span></h3>
+                <h3 class="text-sm font-black italic text-slate-400 uppercase mb-4 tracking-tight underline decoration-orange-500">Mars <span class="text-slate-700 text-xs">2026</span></h3>
                 <div id="gridMars" class="grid grid-cols-7 gap-3"></div>
             </div>
         </div>
     </main>
 
-    <main id="view-activities" class="page-view hidden px-6 mt-6">
-        <h2 class="text-xl font-black italic uppercase mb-6">Chronologie <span class="text-slate-600 text-sm">du jour</span></h2>
-        
-        <div class="glass-card p-6 border-t-4 border-orange-500">
-            <p class="text-[10px] text-slate-500 font-black mb-4 uppercase italic">Jeudi 12 Mars 2026</p>
-            
-            <div class="activity-bar mb-6">
-                <div class="act-repos" style="width: 25%"></div>
-                <div class="act-conduite" style="width: 15%"></div>
-                <div class="act-pause" style="width: 5%"></div>
-                <div class="act-conduite" style="width: 20%"></div>
-                <div class="act-travail" style="width: 10%"></div>
-                <div class="act-repos" style="width: 25%"></div>
+    <main id="view-import" class="page-view hidden px-6 mt-6">
+        <h2 class="text-xl font-black italic uppercase mb-6 text-orange-500">📥 Importation</h2>
+        <div class="space-y-4">
+            <div class="glass-card p-6 border border-indigo-500/30">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="text-3xl">💳</div>
+                    <div>
+                        <h4 class="font-black uppercase text-sm italic">Lecteur USB (OTG)</h4>
+                        <p class="text-[10px] text-slate-500">Lecture directe de la carte</p>
+                    </div>
+                </div>
+                <button onclick="startCardRead()" class="w-full bg-indigo-600 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition">Détecter la carte</button>
             </div>
-
-            <div class="space-y-4">
-                <div class="flex justify-between items-center text-xs">
-                    <div class="flex items-center gap-3">
-                        <div class="w-1 h-8 act-repos rounded-full"></div>
-                        <div><p class="font-bold">Repos</p><p class="text-[10px] text-slate-500">00:00 → 06:00</p></div>
+            <div class="glass-card p-6 border border-white/5">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="text-3xl">📂</div>
+                    <div>
+                        <h4 class="font-black uppercase text-sm italic">Fichier Numérique</h4>
+                        <p class="text-[10px] text-slate-500">Importer .C1B ou .DDD</p>
                     </div>
-                    <p class="font-black">6h00</p>
                 </div>
-                <div class="flex justify-between items-center text-xs">
-                    <div class="flex items-center gap-3">
-                        <div class="w-1 h-8 act-conduite rounded-full"></div>
-                        <div><p class="font-bold text-red-500">Conduite</p><p class="text-[10px] text-slate-500">06:00 → 09:30</p></div>
-                    </div>
-                    <p class="font-black">3h30</p>
-                </div>
+                <button onclick="document.getElementById('fileInput').click()" class="w-full bg-slate-800 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-slate-700 active:scale-95 transition">Parcourir</button>
+                <input type="file" id="fileInput" class="hidden" accept=".c1b,.ddd">
             </div>
         </div>
-    </main>
-
-    <main id="view-infractions" class="page-view hidden px-6 mt-6 text-center">
-        <div class="glass-card p-10">
-            <div class="text-4xl mb-4">✅</div>
-            <h3 class="text-lg font-black uppercase">Aucune infraction</h3>
-            <p class="text-xs text-slate-500 mt-2">Votre conduite respecte les temps de repos réglementaires sur les 28 derniers jours.</p>
+        <div id="importStatus" class="hidden mt-6 text-center">
+            <div class="pulse text-orange-500 text-[10px] font-black uppercase tracking-widest italic">Synchronisation...</div>
         </div>
     </main>
 
@@ -115,10 +111,25 @@
             toggleSidebar();
         }
 
-        // Réutilisation de la fonction buildApp pour le calendrier
+        // Fonction simulée pour mettre à jour l'identité après lecture
+        function updateDriverIdentity(name) {
+            document.getElementById('cardNameSidebar').innerText = name;
+            document.getElementById('headerName').innerText = name + " — Chauffeur Routier";
+        }
+
+        function startCardRead() {
+            const status = document.getElementById('importStatus');
+            status.classList.remove('hidden');
+            setTimeout(() => {
+                // Simulation : On imagine qu'on a lu "JEAN-PIERRE DUPONT" sur la carte
+                updateDriverIdentity("Jean-Pierre Dupont"); 
+                status.innerHTML = "<span class='text-emerald-500 font-black uppercase text-[10px] italic'>✅ Carte Synchronisée</span>";
+                setTimeout(() => { status.classList.add('hidden'); navTo('dashboard'); }, 1500);
+            }, 2500);
+        }
+
         function buildApp() {
             const grid = document.getElementById('gridMars');
-            grid.innerHTML = "";
             for (let d = 1; d <= 31; d++) {
                 const day = document.createElement('div');
                 const isWorked = d % 7 !== 0 && d % 7 !== 6;
