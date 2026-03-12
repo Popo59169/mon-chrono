@@ -1,93 +1,90 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChronoScan ACS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col">
-
-    <header class="p-6 bg-slate-800 border-b border-slate-700 text-center shadow-2xl">
-        <h1 class="text-2xl font-black text-blue-400">CHRONOSCAN</h1>
-        <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Lecteur ACS ACR39U</p>
-    </header>
-
-    <main class="flex-grow p-6 flex flex-col items-center">
+    <main class="w-full max-w-lg p-4 flex flex-col items-center">
         
-        <div id="statusIcon" class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center my-8 border-4 border-slate-700 transition-all">
-            <span id="emoji" class="text-4xl">🔌</span>
+        <div class="w-full flex gap-3 mb-8">
+            <button id="btnConnect" class="flex-1 bg-blue-600 py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
+                <span>📡 LECTEUR USB</span>
+            </button>
+            
+            <input type="file" id="fileInput" class="hidden" accept=".c1b,.v1b,.ddd">
+            <button id="btnImport" class="flex-1 bg-purple-600 py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm">
+                <span>📂 IMPORTER FICHIER</span>
+            </button>
         </div>
 
-        <div id="statusText" class="text-center text-slate-300 mb-8 px-4">
-            Connectez votre lecteur ACS et insérez une carte conducteur.
+        <div class="w-full grid grid-cols-2 gap-4 mb-8">
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-orange-600/20">
+                <label class="text-[10px] text-slate-500 uppercase font-bold">Jours travaillés</label>
+                <p id="daysWorked" class="text-3xl font-black text-orange-400">--</p>
+            </div>
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-blue-600/20">
+                <label class="text-[10px] text-slate-500 uppercase font-bold">Heures de nuit</label>
+                <p id="nightHours" class="text-3xl font-black text-blue-400">--h--</p>
+            </div>
         </div>
 
-        <button id="btnConnect" class="w-full max-w-sm bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
-            LIRE LA CARTE
-        </button>
-
-        <div id="resultCard" class="hidden w-full max-w-sm mt-8 bg-slate-800 rounded-2xl p-6 border border-slate-700 animate-bounce-in">
-            <h3 class="text-blue-400 text-xs font-bold uppercase mb-4">Infos Conducteur</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-slate-500 text-xs block">NOM & PRÉNOM</label>
-                    <p id="driverName" class="text-xl font-semibold italic text-white">CHARGEMENT...</p>
-                </div>
-                <div class="pt-4 border-t border-slate-700">
-                    <label class="text-slate-500 text-xs block">N° DE CARTE</label>
-                    <p id="cardNumber" class="font-mono text-green-400 text-lg tracking-wider">XXXXXXXXXXXXX</p>
-                </div>
+        <div class="w-full bg-slate-800 rounded-3xl p-6 shadow-xl border border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="italic font-bold">HISTORIQUE DES DONNÉES</h2>
+                <span id="sourceLabel" class="text-[10px] bg-slate-700 px-2 py-1 rounded text-slate-400 uppercase">Aucune source</span>
+            </div>
+            <div id="trajetsList" class="space-y-3 font-mono text-xs">
+                <p class="text-center text-slate-600 py-10">En attente de données...</p>
             </div>
         </div>
     </main>
 
-    <footer class="p-4 text-center text-[10px] text-slate-600 uppercase tracking-tighter">
-        100% Gratuit - Usage local uniquement
-    </footer>
-
     <script>
-        const btn = document.getElementById('btnConnect');
-        const statusText = document.getElementById('statusText');
-        const resultCard = document.getElementById('resultCard');
+        const btnConnect = document.getElementById('btnConnect');
+        const btnImport = document.getElementById('btnImport');
+        const fileInput = document.getElementById('fileInput');
+        const sourceLabel = document.getElementById('sourceLabel');
+        const trajetsList = document.getElementById('trajetsList');
 
-        // Les filtres pour ton lecteur ACS ACR39U
-        const ACS_VENDOR_ID = 0x072f; 
+        // --- FONCTION DE TRAITEMENT DES DONNÉES ---
+        function processData(sourceName) {
+            sourceLabel.innerText = sourceName;
+            sourceLabel.classList.replace('bg-slate-700', 'bg-green-900');
+            sourceLabel.classList.replace('text-slate-400', 'text-green-400');
 
-        btn.addEventListener('click', async () => {
+            // Simulation du remplissage (Ici on placera le décodeur C1B)
+            document.getElementById('daysWorked').innerText = "89";
+            document.getElementById('nightHours').innerText = "859h00";
+            
+            trajetsList.innerHTML = `
+                <div class="grid grid-cols-4 text-orange-400 font-bold border-b border-slate-700 pb-1">
+                    <span>30/12</span><span>9h41</span><span class="text-blue-400">9h00</span><span class="text-green-400">58k</span>
+                </div>
+                <div class="grid grid-cols-4 text-white">
+                    <span>29/12</span><span>9h10</span><span class="text-blue-400">8h54</span><span class="text-green-400">59k</span>
+                </div>
+            `;
+        }
+
+        // --- OPTION 1 : LECTEUR USB ACS ---
+        btnConnect.addEventListener('click', async () => {
             try {
-                // 1. Connexion au lecteur
-                const device = await navigator.usb.requestDevice({ 
-                    filters: [{ vendorId: ACS_VENDOR_ID }] 
-                });
-
+                const device = await navigator.usb.requestDevice({ filters: [{ vendorId: 0x072f }] });
                 await device.open();
-                await device.selectConfiguration(1);
-                await device.claimInterface(0);
-
-                statusText.innerText = "Lecteur ACS connecté. Lecture en cours...";
-                document.getElementById('statusIcon').classList.replace('border-slate-700', 'border-blue-500');
-                document.getElementById('emoji').innerText = "⏳";
-
-                // --- LOGIQUE SMART CARD (Simplifiée pour le test) ---
-                // Ici on simule la réception des données APDU pour l'exemple
-                // car le décodage binaire brut nécessite une librairie ASN1.
-                
-                setTimeout(() => {
-                    document.getElementById('emoji').innerText = "✅";
-                    statusText.innerText = "Carte lue avec succès !";
-                    resultCard.classList.remove('hidden');
-                    
-                    // Données extraites (Simulation)
-                    document.getElementById('driverName').innerText = "DUPONT Jean-Marc";
-                    document.getElementById('cardNumber').innerText = "F000000458920 00";
-                }, 2000);
-
+                // ... (logique de lecture APDU déjà vue)
+                processData("LECTEUR ACS CONNECTÉ");
             } catch (err) {
-                console.error(err);
-                statusText.innerHTML = `<span class="text-red-400">Erreur : ${err.message}</span>`;
+                alert("Erreur USB : " + err.message);
+            }
+        });
+
+        // --- OPTION 2 : IMPORT DE FICHIER ---
+        btnImport.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const binaryData = event.target.result; // Voici tes octets bruts !
+                    console.log("Fichier chargé, taille :", binaryData.byteLength);
+                    processData("FICHIER : " + file.name);
+                };
+                reader.readAsArrayBuffer(file);
             }
         });
     </script>
-</body>
-</html>
