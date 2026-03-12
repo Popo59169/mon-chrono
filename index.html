@@ -6,14 +6,14 @@
     <title>Mon Chrono</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
-        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; }
+        body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
+        .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
+        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
         .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
         .sidebar.open { transform: translateX(0); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; display: none; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; backdrop-filter: blur(4px); }
         .tab-active { background: #ff6b35 !important; color: white !important; }
         .hidden { display: none; }
     </style>
@@ -24,63 +24,120 @@
 
     <div id="sidebar" class="sidebar p-6">
         <div class="flex justify-between items-center mb-10">
-            <h2 class="text-orange-500 font-black italic uppercase text-xl">Mon Chrono</h2>
-            <button onclick="toggleSidebar()" class="text-2xl">✕</button>
+            <h2 class="text-orange-500 font-black italic uppercase text-xl italic">Mon Chrono</h2>
+            <button onclick="toggleSidebar()" class="text-2xl text-slate-500">✕</button>
         </div>
         
-        <div class="mb-8 p-4 bg-slate-800/50 rounded-2xl border border-white/5">
-            <p id="sideName" class="text-sm font-black uppercase italic">Nom Conducteur</p>
-            <p class="text-[10px] text-orange-500 font-bold uppercase tracking-widest">Chauffeur Routier</p>
+        <div class="mb-8 p-4 bg-slate-800/50 rounded-2xl border border-white/5 text-left">
+            <p id="sideName" class="text-sm font-black uppercase italic leading-none">Nom Conducteur</p>
+            <p class="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">Chauffeur Routier</p>
         </div>
 
         <nav class="flex flex-col gap-2">
-            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold">📊 Tableau de bord</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold">🚛 Activités</button>
-            <button onclick="navTo('infractions')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold">⚠️ Infractions</button>
-            <hr class="border-slate-800 my-2">
-            <button onclick="navTo('import')" class="w-full text-left p-4 bg-orange-500/10 text-orange-500 rounded-xl font-black italic">📥 IMPORTER CARTE</button>
+            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold flex items-center gap-3">📊 Tableau de bord</button>
+            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold flex items-center gap-3">🚛 Activités</button>
+            <button onclick="navTo('infractions')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold flex items-center gap-3 text-red-400">⚠️ Infractions</button>
+            <hr class="border-slate-800 my-4">
+            <button onclick="navTo('import')" class="w-full text-left p-4 bg-orange-500/10 text-orange-500 rounded-xl font-black italic flex items-center gap-3 uppercase">📥 Importation</button>
         </nav>
     </div>
 
     <header class="p-6 flex items-center gap-4">
-        <button onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center text-2xl shadow-lg">🚛</button>
-        <div>
+        <button onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center text-2xl shadow-lg active:scale-90 transition">🚛</button>
+        <div class="text-left">
             <h1 class="text-xl font-black italic uppercase leading-none text-white">Mon <span class="text-orange-500">Chrono</span></h1>
-            <p id="headName" class="text-[10px] text-slate-500 font-bold uppercase mt-1 italic">Chauffeur Routier</p>
+            <p id="headName" class="text-[9px] text-slate-500 font-bold uppercase mt-1 italic tracking-widest">Chauffeur Routier</p>
         </div>
     </header>
 
     <main class="px-6">
+        
         <div id="view-dashboard" class="page-view">
             <div class="flex gap-2 mb-6">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase tab-active">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase">Tachygraphe</button>
+                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase tab-active transition-all">Calendrier</button>
+                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase transition-all">Tachygraphe</button>
             </div>
 
-            <div id="sec-cal" class="glass-card p-4">
-                <h3 class="text-xs font-black uppercase text-slate-500 mb-4 italic">Mars 2026</h3>
-                <div id="grid" class="grid grid-cols-7 gap-2 text-center"></div>
+            <div id="sec-cal" class="glass-card p-5">
+                <h3 class="text-xs font-black uppercase text-slate-400 mb-4 italic">Mars 2026</h3>
+                <div id="grid" class="grid grid-cols-7 gap-2 text-center text-[9px] font-black text-slate-600 mb-2">
+                    <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span class="text-red-500">D</span>
+                </div>
+                <div id="gridBody" class="grid grid-cols-7 gap-2"></div>
             </div>
 
-            <div id="sec-tachy" class="glass-card p-4 hidden">
+            <div id="sec-tachy" class="glass-card p-0 hidden overflow-hidden">
                 <table class="w-full text-[11px]">
-                    <thead class="text-slate-500 uppercase font-bold border-b border-slate-700">
-                        <tr><th class="py-2 text-left">Date</th><th class="py-2">Service</th><th class="py-2 text-right text-blue-400">Nuit</th></tr>
+                    <thead class="bg-slate-800/50 text-slate-500 uppercase font-bold">
+                        <tr><th class="p-4 text-left">Date</th><th class="p-4 text-center">Service</th><th class="p-4 text-right text-blue-400">Nuit</th></tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <div id="view-import" class="page-view hidden">
-            <h2 class="text-xl font-black uppercase italic mb-6">Importation</h2>
-            <button onclick="simulRead()" class="w-full py-6 bg-indigo-600 rounded-3xl font-black uppercase mb-4 shadow-xl">💳 Lire Carte Conducteur</button>
-            <p id="status" class="text-center text-orange-500 font-bold uppercase text-[10px] hidden animate-pulse">Lecture de la puce...</p>
+        <div id="view-activities" class="page-view hidden">
+            <h2 class="text-xl font-black italic uppercase mb-6 underline decoration-orange-500">Chronologie</h2>
+            <div class="glass-card p-6 border-t-4 border-orange-500">
+                <div class="w-full h-4 bg-slate-800 rounded-full flex overflow-hidden mb-4">
+                    <div class="bg-green-600 h-full" style="width: 25%"></div>
+                    <div class="bg-red-600 h-full" style="width: 30%"></div>
+                    <div class="bg-indigo-600 h-full" style="width: 10%"></div>
+                    <div class="bg-red-600 h-full" style="width: 20%"></div>
+                    <div class="bg-green-600 h-full" style="width: 15%"></div>
+                </div>
+                <p class="text-[10px] text-slate-500 font-bold uppercase text-center italic">Aujourd'hui : 12 Mars 2026</p>
+            </div>
         </div>
 
-        <div id="view-activities" class="page-view hidden px-4 py-10 glass-card text-center italic text-slate-500">Flux d'activités bientôt disponible...</div>
-        <div id="view-infractions" class="page-view hidden px-4 py-10 glass-card text-center font-black text-emerald-500 italic">✅ AUCUNE INFRACTION DÉTECTÉE</div>
+        <div id="view-infractions" class="page-view hidden">
+            <div class="glass-card p-10 text-center">
+                <div class="text-5xl mb-4">✅</div>
+                <h3 class="font-black uppercase text-emerald-500 italic">RSE Conforme</h3>
+                <p class="text-[10px] text-slate-500 mt-2 uppercase font-bold tracking-tighter">Aucune infraction sur les 28 derniers jours</p>
+            </div>
+        </div>
+
+        <div id="view-import" class="page-view hidden">
+            <h2 class="text-xl font-black uppercase italic mb-6 text-orange-500">📥 Importation</h2>
+            <div class="flex flex-col gap-4">
+                <button onclick="simulRead()" class="w-full py-6 bg-indigo-600 rounded-3xl font-black uppercase text-xs shadow-xl active:scale-95 transition">💳 Lire Carte USB (OTG)</button>
+                
+                <div class="p-6 glass-card border-dashed border-2 border-slate-700 flex flex-col items-center gap-4">
+                    <div class="text-3xl">📂</div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Fichiers numériques .C1B / .DDD</p>
+                    <button onclick="document.getElementById('fileInput').click()" class="w-full py-4 bg-slate-800 rounded-2xl font-black uppercase text-[10px] border border-slate-700">Parcourir les fichiers</button>
+                    <input type="file" id="fileInput" class="hidden" accept=".c1b,.ddd">
+                </div>
+            </div>
+            <p id="status" class="mt-6 text-center text-orange-500 font-black uppercase text-[10px] hidden animate-pulse">Synchronisation en cours...</p>
+        </div>
+
     </main>
+
+    <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onclick="closeModal()"></div>
+        <div class="glass-card w-full max-w-sm p-8 relative border-t-8 border-orange-500 animate-in slide-in-from-bottom duration-300">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modalDate" class="text-3xl font-black italic text-white uppercase tracking-tighter">DATE</h3>
+                <div class="text-right">
+                    <p class="text-[9px] text-slate-500 font-black uppercase">Service</p>
+                    <p class="text-2xl font-black text-orange-500">10h30</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-8 text-left">
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <p class="text-[9px] text-indigo-400 font-black uppercase mb-1">Travail de Nuit</p>
+                    <p class="text-xl font-black text-white">07h20</p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <p class="text-[9px] text-emerald-400 font-black uppercase mb-1">Frais Nets</p>
+                    <p class="text-xl font-black text-white">22.42€</p>
+                </div>
+            </div>
+            <button onclick="closeModal()" class="w-full py-5 bg-orange-600 rounded-3xl font-black uppercase text-xs shadow-lg shadow-orange-900/40">Fermer la fiche</button>
+        </div>
+    </div>
 
     <script>
         function toggleSidebar() {
@@ -104,6 +161,13 @@
             document.getElementById('btnTachy').classList.toggle('tab-active', type === 'tachy');
         }
 
+        function openModal(d) {
+            document.getElementById('modalDate').innerText = d + " MARS";
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
+
         function simulRead() {
             const s = document.getElementById('status');
             s.classList.remove('hidden');
@@ -111,13 +175,13 @@
                 const name = "DYLAN PETIT";
                 document.getElementById('sideName').innerText = name;
                 document.getElementById('headName').innerText = name + " — CHAUFFEUR ROUTIER";
-                s.innerText = "✅ CARTE SYNCHRONISÉE";
-                setTimeout(() => navTo('dashboard'), 1000);
+                s.innerHTML = "✅ CARTE SYNCHRONISÉE";
+                setTimeout(() => { s.classList.add('hidden'); navTo('dashboard'); }, 1000);
             }, 2000);
         }
 
         function init() {
-            const grid = document.getElementById('grid');
+            const grid = document.getElementById('gridBody');
             const table = document.getElementById('tableBody');
             grid.innerHTML = ""; table.innerHTML = "";
 
@@ -126,12 +190,13 @@
                 const day = document.createElement('div');
                 day.className = `day-box ${isOff ? 'rest' : 'worked'}`;
                 day.innerText = d;
+                if(!isOff) day.onclick = () => openModal(d);
                 grid.appendChild(day);
 
                 if(!isOff) {
                     const tr = document.createElement('tr');
                     tr.className = "border-b border-white/5";
-                    tr.innerHTML = `<td class="py-3 text-slate-400 font-bold">${d}/03</td><td class="py-3 text-center font-black">10h30</td><td class="py-3 text-right text-blue-400 font-black">07h20</td>`;
+                    tr.innerHTML = `<td class="p-4 text-slate-400 font-bold">${d}/03</td><td class="p-4 text-center font-black">10h30</td><td class="p-4 text-right text-blue-400 font-black">07h20</td>`;
                     table.appendChild(tr);
                 }
             }
