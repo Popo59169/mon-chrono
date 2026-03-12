@@ -3,132 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heures Routier Pro</title>
+    <title>Heures Routier Pro v1.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #0d1117;
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-        }
-        .glass-card {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 1.5rem;
-        }
-        .btn-orange { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); }
-        .btn-purple { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
-        .text-orange-glow { color: #ff6b35; text-shadow: 0 0 10px rgba(255, 107, 53, 0.3); }
+        body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 1.2rem; }
+        .day-box { aspect-ratio: 1/1; display: flex; items-center; justify-content: center; border-radius: 0.5rem; font-size: 0.7rem; font-weight: bold; }
+        .worked { background: #ff6b35; color: white; }
+        .rest { background: #1e293b; color: #475569; }
+        .sunday-ferie { border: 2px solid #ef4444; }
+        .tab-active { background: #ff6b35 !important; color: white !important; border-color: #ff6b35 !important; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="min-h-screen pb-10">
+<body class="pb-10">
 
-    <nav class="p-6 flex items-center justify-between">
+    <header class="p-6 pb-2">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center shadow-lg shadow-orange-900/20">
-                🚚
-            </div>
+            <div class="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center shadow-lg text-xl">🚚</div>
             <div>
-                <h1 class="text-xl font-black italic tracking-tighter">HEURES <span class="text-orange-500">ROUTIER</span></h1>
-                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-widest" id="driverInfo">DYLAN PETIT — CARTE N° 100000...</p>
+                <h1 class="text-xl font-black italic tracking-tighter uppercase leading-none">Heures <span class="text-orange-500">Routier</span></h1>
+                <p class="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-widest">Dylan Petit — v1.3</p>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <div class="px-6 flex gap-2 mb-6">
-        <button class="bg-slate-800 px-4 py-2 rounded-full text-xs font-bold border border-slate-700">📅 Calendrier</button>
-        <button id="btnConnect" class="bg-slate-800 px-4 py-2 rounded-full text-xs font-bold border border-slate-700 flex items-center gap-2">
-            📁 Tachygraphe
-        </button>
+    <div class="px-6 flex gap-2 mt-4">
+        <button id="btnTabCal" onclick="switchTab('cal')" class="flex-1 bg-slate-800 py-2 rounded-full text-[10px] font-black border border-slate-700 uppercase transition-all tab-active">📅 Calendrier</button>
+        <button id="btnTabTachy" onclick="switchTab('tachy')" class="flex-1 bg-slate-800 py-2 rounded-full text-[10px] font-black border border-slate-700 uppercase transition-all">📑 Tachygraphe</button>
     </div>
 
-    <div class="px-6 flex items-center justify-between mb-8">
+    <div class="px-6 mt-6 flex items-center justify-between">
         <div class="flex gap-4 items-baseline">
-            <span class="text-3xl font-black text-orange-500 italic">2025</span>
-            <span class="text-2xl font-black text-slate-700 italic">2026</span>
+            <span class="text-2xl font-black text-orange-500 italic">2026</span>
+            <span class="text-xl font-black text-slate-800 italic">2027</span>
         </div>
-        <button id="btnImport" class="btn-purple px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-purple-900/20">
-            📄 Importer PDF / C1B
-        </button>
+        <button onclick="document.getElementById('fileInput').click()" class="bg-indigo-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-indigo-900/20">📂 Importer</button>
     </div>
 
-    <div class="px-6 mb-8">
-        <button class="btn-orange w-32 py-2 rounded-xl text-xs font-bold shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2">
-            💾 Sauvegarder
-        </button>
-    </div>
+    <input type="file" id="fileInput" class="hidden" accept=".c1b,.v1b,.ddd">
 
-    <div class="px-6 grid grid-cols-2 gap-4 mb-10">
-        <div class="glass-card p-5 border-l-4 border-orange-500">
-            <label class="text-[10px] text-slate-500 font-bold uppercase">Jours travaillés</label>
-            <p id="kpi-days" class="text-3xl font-black text-orange-500 mt-1">89</p>
-            <p class="text-[10px] text-slate-600 mt-1 italic">cette année</p>
-        </div>
-        <div class="glass-card p-5 border-l-4 border-indigo-500">
-            <label class="text-[10px] text-slate-500 font-bold uppercase">Heures de nuit</label>
-            <p id="kpi-night" class="text-3xl font-black text-indigo-400 mt-1">859h00</p>
-            <p class="text-[10px] text-slate-600 mt-1 italic">entre 21h et 6h</p>
-        </div>
-        <div class="glass-card p-5 border-l-4 border-rose-500">
-            <label class="text-[10px] text-slate-500 font-bold uppercase">Dimanches</label>
-            <p id="kpi-sun" class="text-3xl font-black text-rose-500 mt-1">15</p>
-            <p class="text-[10px] text-slate-600 mt-1 italic">travaillés</p>
-        </div>
-        <div class="glass-card p-5 border-l-4 border-emerald-500">
-            <label class="text-[10px] text-slate-500 font-bold uppercase">KM parcourus</label>
-            <p id="kpi-km" class="text-3xl font-black text-emerald-400 mt-1">58k</p>
-            <p class="text-[10px] text-slate-600 mt-1 italic">57 865 km</p>
-        </div>
-    </div>
-
-    <div class="px-6">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-2xl font-black italic text-slate-400 tracking-tighter uppercase">Décembre <span class="text-slate-700">2025</span></h2>
-            <div class="flex gap-4 text-[10px] text-slate-500">
-                <span>🚛 17 trajets</span>
-                <span>📍 10 114 km</span>
+    <div id="viewCalendrier" class="px-6 mt-8 space-y-8">
+        <div class="glass-card p-4">
+            <h3 class="text-sm font-black italic text-slate-400 uppercase mb-4">Mars <span class="text-slate-700">2026</span></h3>
+            <div class="grid grid-cols-7 gap-2 text-center text-[8px] text-slate-600 font-bold mb-2">
+                <span>LU</span><span>MA</span><span>ME</span><span>JE</span><span>VE</span><span>SA</span><span class="text-red-500">DI</span>
             </div>
+            <div id="gridMars" class="grid grid-cols-7 gap-2">
+                </div>
         </div>
+    </div>
 
+    <div id="viewTachy" class="px-6 mt-8 hidden">
+        <h3 class="text-sm font-black italic text-slate-400 uppercase mb-4 italic">Détails <span class="text-slate-700">Mars</span></h3>
         <div class="glass-card overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-slate-800/50 text-[10px] text-slate-500 font-bold uppercase">
+            <table class="w-full text-left text-[11px]">
+                <thead class="bg-slate-800/50 text-slate-500 font-bold uppercase">
                     <tr>
-                        <th class="p-4">Date</th>
-                        <th class="p-4 text-orange-500">Heures Totales</th>
-                        <th class="p-4 text-indigo-400">Nuit</th>
-                        <th class="p-4 text-emerald-400">KM</th>
+                        <th class="p-4 border-b border-slate-700">Date</th>
+                        <th class="p-4 border-b border-slate-700 text-orange-500">Heures Totales</th>
+                        <th class="p-4 border-b border-slate-700 text-blue-400">Nuit (21h-6h)</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody" class="text-xs font-mono">
-                    <tr class="border-t border-slate-800">
-                        <td class="p-4 text-orange-500 font-bold">30/12</td>
-                        <td class="p-4 font-bold">9h41</td>
-                        <td class="p-4 text-indigo-400">9h00</td>
-                        <td class="p-4 text-emerald-400">584</td>
-                    </tr>
+                <tbody id="tachyTableBody" class="font-mono">
                     </tbody>
             </table>
         </div>
     </div>
 
-    <input type="file" id="fileInput" class="hidden" accept=".c1b,.v1b,.ddd">
-
     <script>
-        // Logique pour l'import (identique à précédemment mais avec ton nouveau design)
-        const btnImport = document.getElementById('btnImport');
-        const fileInput = document.getElementById('fileInput');
+        // Switch entre les vues
+        function switchTab(tab) {
+            const vCal = document.getElementById('viewCalendrier');
+            const vTachy = document.getElementById('viewTachy');
+            const btnCal = document.getElementById('btnTabCal');
+            const btnTachy = document.getElementById('btnTabTachy');
 
-        btnImport.addEventListener('click', () => fileInput.click());
-        
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                alert("Analyse du fichier : " + file.name);
-                // On pourra ici appeler la fonction de décodage réelle
+            if (tab === 'cal') {
+                vCal.classList.remove('hidden');
+                vTachy.classList.add('hidden');
+                btnCal.classList.add('tab-active');
+                btnTachy.classList.remove('tab-active');
+            } else {
+                vCal.classList.add('hidden');
+                vTachy.classList.remove('hidden');
+                btnCal.classList.remove('tab-active');
+                btnTachy.classList.add('tab-active');
             }
-        });
+        }
+
+        // Génération du calendrier de Mars pour l'exemple
+        function buildCalendar() {
+            const grid = document.getElementById('gridMars');
+            const table = document.getElementById('tachyTableBody');
+            
+            // On simule 31 jours
+            for (let d = 1; d <= 31; d++) {
+                // Design Calendrier
+                const day = document.createElement('div');
+                const isWorked = d % 7 !== 0 && d % 7 !== 6; // Simule repos week-end
+                const isSunday = (d % 7 === 1); // Pour le test DI = 1, 8, 15...
+                
+                day.className = `day-box ${isWorked ? 'worked' : 'rest'} ${isSunday ? 'sunday-ferie' : ''}`;
+                day.innerText = d;
+                grid.appendChild(day);
+
+                // Design Tableau Tachygraphe
+                if (isWorked) {
+                    const row = document.createElement('tr');
+                    row.className = "border-b border-slate-800/50";
+                    row.innerHTML = `
+                        <td class="p-4 text-slate-400">${d < 10 ? '0'+d : d}/03</td>
+                        <td class="p-4 font-bold">09h45</td>
+                        <td class="p-4 text-blue-400">07h20</td>
+                    `;
+                    table.appendChild(row);
+                }
+            }
+        }
+
+        window.onload = buildCalendar;
     </script>
 </body>
 </html>
