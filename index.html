@@ -8,9 +8,11 @@
     <style>
         body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
-        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; }
+        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
+        .conge { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; color: white !important; }
+        .conge::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: white; border-radius: 50%; }
         .empty { visibility: hidden; }
         .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #ff6b35; padding-bottom: 8px; font-style: italic; }
         
@@ -26,11 +28,7 @@
         
         .timeline-item { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 15px; position: relative; padding-bottom: 15px; }
         .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
-
         .loading-bar { height: 4px; background: #ff6b35; width: 0%; transition: width 2s ease-in-out; border-radius: 2px; }
-        .card-slot { width: 100%; height: 8px; background: #000; border-radius: 4px; margin-top: 10px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .animate-spin { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body onload="initApp()">
@@ -57,7 +55,6 @@
                 <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan Petit — Travail de Nuit</p>
             </div>
         </div>
-        
         <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
             <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
             <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">Mars 2026</span>
@@ -71,12 +68,21 @@
                 <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
                 <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tachygraphe</button>
             </div>
-            
-            <div id="sec-cal" class="glass-card p-5">
-                <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
-                <div id="grid" class="grid grid-cols-7 gap-2"></div>
+            <div id="sec-cal" class="space-y-4">
+                <div class="glass-card p-5">
+                    <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
+                    <div id="grid" class="grid grid-cols-7 gap-2"></div>
+                </div>
+                <div class="glass-card p-5 border-l-4 border-blue-500">
+                    <h3 class="text-[10px] font-black italic uppercase text-blue-400 mb-4">Poser des Congés / Repos</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="date" id="congeStart" class="flex-1 bg-slate-900 border border-white/10 rounded-lg p-2 text-[10px] text-white font-bold">
+                        <input type="date" id="congeEnd" class="flex-1 bg-slate-900 border border-white/10 rounded-lg p-2 text-[10px] text-white font-bold">
+                        <button onclick="ajouterConge()" class="bg-blue-600 px-4 rounded-lg text-white font-black text-xs">OK</button>
+                    </div>
+                    <div id="listeCongesAffichage" class="space-y-2 max-h-32 overflow-y-auto"></div>
+                </div>
             </div>
-
             <div id="sec-tachy" class="hidden space-y-4">
                 <div class="glass-card overflow-hidden">
                     <table class="w-full text-[10px] text-left border-collapse">
@@ -112,67 +118,51 @@
         </div>
 
         <div id="view-infractions" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase">Infractions Détectées</h2>
-            <div id="infractionsBody" class="space-y-4">
-                <div class="glass-card p-6 text-center border-l-4 border-emerald-500">
-                    <p class="text-slate-400 font-bold italic uppercase text-[10px]">Aucune donnée. Importez un fichier .DDD</p>
-                </div>
-            </div>
+            <h2 class="text-xl font-black italic uppercase text-center">Infractions Détectées</h2>
+            <div id="infractionsBody" class="space-y-4"></div>
         </div>
 
         <div id="view-import" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase">Importation .DDD</h2>
-            <p class="text-[10px] text-slate-400 italic">Branchez votre lecteur USB-C, insérez la carte, puis sélectionnez le fichier .DDD généré.</p>
-
-            <!-- DROP ZONE -->
-            <div id="dropZone" class="glass-card p-8 border-2 border-dashed border-orange-500/30 rounded-2xl flex flex-col items-center gap-4 cursor-pointer hover:bg-orange-500/5 transition-all relative"
-                 onclick="document.getElementById('dddInput').click()"
-                 ondragover="event.preventDefault();this.classList.add('border-orange-500')"
-                 ondragleave="this.classList.remove('border-orange-500')"
-                 ondrop="event.preventDefault();this.classList.remove('border-orange-500');handleDDD(event.dataTransfer.files[0])">
-                <input id="dddInput" type="file" accept=".ddd,.DDD,application/octet-stream" class="hidden" onchange="handleDDD(this.files[0])"/>
-                <div class="text-5xl">💳</div>
-                <div class="text-center">
-                    <p class="font-black uppercase italic text-white text-sm">Déposer ou sélectionner</p>
-                    <p class="text-[10px] text-slate-400 mt-1">Fichier .DDD de votre carte tachygraphe</p>
+            <h2 class="text-xl font-black italic uppercase text-center">Gestion des Données</h2>
+            <div class="glass-card p-6 border-l-4 border-orange-500 mb-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="text-2xl">💳</div>
+                    <h3 class="text-[10px] font-black uppercase italic text-white">Lecteur de Carte Conducteur</h3>
                 </div>
-                <div class="flex items-center gap-2 bg-orange-600 px-6 py-3 rounded-xl">
-                    <span class="text-white font-black uppercase text-[10px] italic">📂 Choisir le fichier .DDD</span>
+                <div id="cardProgressArea" class="hidden mb-4">
+                    <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden">
+                        <div id="importProgress" class="loading-bar"></div>
+                    </div>
                 </div>
+                <button onclick="startSimulatedImport()" class="w-full bg-orange-600 py-3 rounded-xl font-black uppercase text-[10px] italic text-white shadow-lg">Lancer la lecture carte</button>
             </div>
-
-            <!-- PROGRESS -->
-            <div id="importBox" class="hidden glass-card p-6 border-l-4 border-orange-500 space-y-4">
-                <div class="flex items-center gap-3">
-                    <div id="importSpinner" class="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p id="importStatus" class="font-black italic uppercase text-xs text-orange-400">Lecture en cours…</p>
+            <div class="glass-card p-6 border-l-4 border-blue-500">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="text-2xl">📁</div>
+                    <h3 class="text-[10px] font-black uppercase italic text-white">Importer un fichier .DDD / .C1B</h3>
                 </div>
-                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                    <div id="importBar" class="h-full bg-orange-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                <div id="dropZone" class="w-full border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-800/30 mb-2" onclick="document.getElementById('fileInput').click()">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Cliquer pour choisir un fichier</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".ddd,.c1b,.v1b" onchange="handleFileSelect(this)">
                 </div>
-                <p id="importDetail" class="text-[10px] text-slate-400 italic"></p>
-            </div>
-
-            <!-- RESULT -->
-            <div id="importResult" class="hidden glass-card p-6 border-l-4 border-emerald-500 space-y-3">
-                <p class="font-black italic uppercase text-xs text-emerald-400">✓ Données importées</p>
-                <div id="importSummary" class="text-[10px] text-slate-300 space-y-1"></div>
-                <button onclick="applyImport()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white mt-2">✓ Intégrer dans l'application</button>
-            </div>
-
-            <!-- ERROR -->
-            <div id="importError" class="hidden glass-card p-6 border-l-4 border-red-500">
-                <p class="font-black italic uppercase text-xs text-red-400 mb-2">⚠ Erreur</p>
-                <p id="importErrorMsg" class="text-[10px] text-slate-300"></p>
+                <div id="fileStatusArea" class="hidden mt-4">
+                    <div class="flex justify-between items-center bg-blue-500/10 p-2 rounded border border-blue-500/20">
+                        <span id="fileNameDisplay" class="text-[9px] font-black text-blue-400 uppercase truncate w-40">---</span>
+                        <span id="filePercent" class="text-[9px] font-black text-white">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden mt-1">
+                        <div id="fileProgressBar" class="h-full bg-blue-500 w-0 transition-all"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div id="view-settings" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase text-slate-500">Réglages</h2>
+            <h2 class="text-xl font-black italic uppercase text-slate-500 text-center">Réglages</h2>
             <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" step="0.01" value="9.81" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche</span><input type="number" id="valPrime" step="0.01" value="40.00" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Sauvegarder les tarifs</button>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche</span><input type="number" id="valPrime" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Sauvegarder</button>
             </div>
         </div>
     </main>
@@ -180,437 +170,254 @@
     <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
         <div class="absolute inset-0 bg-black/80" onclick="closeModal()"></div>
         <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
-            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-white">-- ---</h3>
+            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-white"></h3>
             <div id="modalBody"></div>
-            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white shadow-xl">Fermer</button>
+            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white">Fermer</button>
         </div>
     </div>
 
     <script>
+        let curM = 2; let curY = 2026;
+        let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { repas: 9.81, prime: 40.00 };
+        let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
+        const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-        // ── DONNÉES RÉELLES TACHYGRAPHE ──────────────────────────────
-        const TRIPS = {
-          '2025-7': [ // Août
-            {d:1,dep:'18:38',arr:'02/08 04:20',pause:46},
-            {d:4,dep:'19:58',arr:'05/08 03:59',pause:49},
-            {d:5,dep:'20:06',arr:'06/08 03:33',pause:55},
-            {d:6,dep:'19:16',arr:'07/08 03:42',pause:50},
-            {d:7,dep:'19:59',arr:'08/08 04:03',pause:47},
-            {d:8,dep:'19:56',arr:'09/08 03:26',pause:46},
-            {d:11,dep:'18:10',arr:'12/08 01:31',pause:47},
-            {d:12,dep:'18:22',arr:'13/08 02:02',pause:46},
-            {d:13,dep:'18:13',arr:'14/08 02:52',pause:52},
-            {d:17,dep:'21:28',arr:'18/08 07:54',pause:61},
-            {d:18,dep:'20:48',arr:'19/08 07:15',pause:47},
-            {d:19,dep:'20:45',arr:'20/08 06:33',pause:49},
-            {d:20,dep:'20:44',arr:'21/08 07:29',pause:47},
-            {d:21,dep:'20:46',arr:'22/08 06:30',pause:48},
-            {d:24,dep:'21:43',arr:'25/08 06:49',pause:47},
-            {d:25,dep:'20:45',arr:'26/08 07:30',pause:47},
-            {d:26,dep:'20:41',arr:'27/08 05:48',pause:48},
-            {d:27,dep:'20:16',arr:'28/08 08:25',pause:118},
-            {d:28,dep:'21:42',arr:'29/08 08:32',pause:46},
-            {d:31,dep:'21:40',arr:'01/09 06:36',pause:46},
-          ],
-          '2025-8': [ // Septembre
-            {d:1,dep:'20:42',arr:'02/09 07:15',pause:48},
-            {d:2,dep:'20:46',arr:'03/09 05:48',pause:48},
-            {d:3,dep:'20:41',arr:'04/09 07:27',pause:47},
-            {d:4,dep:'20:44',arr:'05/09 06:18',pause:48},
-            {d:7,dep:'21:43',arr:'08/09 08:06',pause:47},
-            {d:8,dep:'20:48',arr:'09/09 08:18',pause:45},
-            {d:9,dep:'20:43',arr:'10/09 07:20',pause:49},
-            {d:10,dep:'20:47',arr:'11/09 07:31',pause:45},
-            {d:11,dep:'20:34',arr:'12/09 05:36',pause:48},
-            {d:14,dep:'21:39',arr:'15/09 07:57',pause:52},
-            {d:15,dep:'20:41',arr:'16/09 07:14',pause:48},
-            {d:16,dep:'20:47',arr:'17/09 05:57',pause:46},
-            {d:17,dep:'20:47',arr:'18/09 07:28',pause:47},
-            {d:18,dep:'19:48',arr:'19/09 05:37',pause:47},
-            {d:21,dep:'21:37',arr:'22/09 06:55',pause:58},
-            {d:22,dep:'20:43',arr:'23/09 06:28',pause:47},
-            {d:23,dep:'20:56',arr:'24/09 08:09',pause:67},
-            {d:24,dep:'20:53',arr:'25/09 07:38',pause:45},
-            {d:25,dep:'20:48',arr:'26/09 06:55',pause:46},
-            {d:28,dep:'21:43',arr:'29/09 07:27',pause:49},
-            {d:29,dep:'21:02',arr:'30/09 07:40',pause:45},
-            {d:30,dep:'20:49',arr:'01/10 06:04',pause:46},
-          ],
-          '2025-9': [ // Octobre
-            {d:1,dep:'20:44',arr:'02/10 07:31',pause:48},
-            {d:2,dep:'20:43',arr:'03/10 06:31',pause:45},
-            {d:5,dep:'21:37',arr:'06/10 07:36',pause:46},
-            {d:6,dep:'20:46',arr:'07/10 07:33',pause:47},
-            {d:7,dep:'20:42',arr:'08/10 06:19',pause:46},
-            {d:8,dep:'20:41',arr:'09/10 08:57',pause:53},
-            {d:9,dep:'20:50',arr:'10/10 06:53',pause:46},
-            {d:12,dep:'21:43',arr:'13/10 07:47',pause:46},
-            {d:13,dep:'20:56',arr:'14/10 08:43',pause:47},
-            {d:14,dep:'20:45',arr:'15/10 06:54',pause:45},
-            {d:15,dep:'20:42',arr:'16/10 07:27',pause:47},
-            {d:16,dep:'20:45',arr:'17/10 06:39',pause:45},
-            {d:20,dep:'20:37',arr:'21/10 06:57',pause:48},
-            {d:21,dep:'20:33',arr:'22/10 05:34',pause:52},
-            {d:22,dep:'20:30',arr:'23/10 07:21',pause:46},
-            {d:23,dep:'20:26',arr:'24/10 07:11',pause:52},
-            {d:26,dep:'21:37',arr:'27/10 07:19',pause:53},
-            {d:27,dep:'20:41',arr:'28/10 07:54',pause:54},
-            {d:28,dep:'20:29',arr:'29/10 06:07',pause:55},
-            {d:29,dep:'20:42',arr:'30/10 06:53',pause:45},
-            {d:30,dep:'20:44',arr:'31/10 06:12',pause:48},
-          ],
-          '2025-10': [ // Novembre
-            {d:2,dep:'21:47',arr:'03/11 07:04',pause:45},
-            {d:3,dep:'20:41',arr:'04/11 07:58',pause:49},
-            {d:4,dep:'19:26',arr:'05/11 05:33',pause:46},
-            {d:5,dep:'20:42',arr:'06/11 08:19',pause:48},
-            {d:6,dep:'20:40',arr:'07/11 06:34',pause:45},
-            {d:9,dep:'21:41',arr:'10/11 06:50',pause:47},
-            {d:11,dep:'21:29',arr:'12/11 07:27',pause:52},
-            {d:12,dep:'20:42',arr:'13/11 07:00',pause:47},
-            {d:13,dep:'20:43',arr:'14/11 06:28',pause:46},
-            {d:16,dep:'21:43',arr:'17/11 07:11',pause:48},
-            {d:17,dep:'20:45',arr:'18/11 07:32',pause:47},
-            {d:18,dep:'20:44',arr:'19/11 06:55',pause:46},
-            {d:19,dep:'20:44',arr:'20/11 07:30',pause:46},
-            {d:20,dep:'20:40',arr:'21/11 07:08',pause:47},
-            {d:23,dep:'21:42',arr:'24/11 07:21',pause:46},
-            {d:24,dep:'20:50',arr:'25/11 07:37',pause:47},
-            {d:25,dep:'19:53',arr:'26/11 05:56',pause:47},
-            {d:26,dep:'20:44',arr:'27/11 07:31',pause:591},
-            {d:27,dep:'20:38',arr:'28/11 07:21',pause:57},
-            {d:30,dep:'21:32',arr:'01/12 07:15',pause:55},
-          ],
-          '2025-11': [ // Décembre
-            {d:1,dep:'20:36',arr:'02/12 07:23',pause:46},
-            {d:2,dep:'20:41',arr:'03/12 06:49',pause:50},
-            {d:3,dep:'20:45',arr:'04/12 08:40',pause:46},
-            {d:4,dep:'20:49',arr:'05/12 06:09',pause:47},
-            {d:7,dep:'21:45',arr:'08/12 07:44',pause:46},
-            {d:8,dep:'20:51',arr:'09/12 07:34',pause:52},
-            {d:9,dep:'20:39',arr:'10/12 07:26',pause:47},
-            {d:10,dep:'20:48',arr:'11/12 07:03',pause:46},
-            {d:11,dep:'20:40',arr:'12/12 06:52',pause:45},
-            {d:14,dep:'21:45',arr:'15/12 07:05',pause:46},
-            {d:15,dep:'20:41',arr:'16/12 06:35',pause:47},
-            {d:16,dep:'20:39',arr:'17/12 05:33',pause:53},
-            {d:17,dep:'20:38',arr:'18/12 07:36',pause:45},
-            {d:18,dep:'20:31',arr:'19/12 05:31',pause:59},
-            {d:28,dep:'21:37',arr:'29/12 07:11',pause:51},
-            {d:29,dep:'20:44',arr:'30/12 05:54',pause:46},
-            {d:30,dep:'20:35',arr:'31/12 06:16',pause:56},
-          ],
-          '2026-0': [ // Janvier
-            {d:1,dep:'21:37',arr:'02/01 06:35',pause:55},
-            {d:4,dep:'21:40',arr:'05/01 07:08',pause:47},
-            {d:7,dep:'18:58',arr:'08/01 05:03',pause:46},
-            {d:8,dep:'18:50',arr:'09/01 04:31',pause:46},
-            {d:11,dep:'21:43',arr:'12/01 07:18',pause:47},
-            {d:12,dep:'20:41',arr:'13/01 07:27',pause:46},
-            {d:13,dep:'20:37',arr:'14/01 05:50',pause:46},
-            {d:14,dep:'20:37',arr:'15/01 07:30',pause:54},
-            {d:15,dep:'20:35',arr:'16/01 06:42',pause:57},
-            {d:18,dep:'21:43',arr:'19/01 07:21',pause:47},
-            {d:19,dep:'20:32',arr:'20/01 07:16',pause:57},
-            {d:20,dep:'20:41',arr:'21/01 06:52',pause:48},
-            {d:21,dep:'20:43',arr:'22/01 07:44',pause:48},
-            {d:22,dep:'20:36',arr:'23/01 06:54',pause:57},
-            {d:25,dep:'21:40',arr:'26/01 08:02',pause:46},
-            {d:26,dep:'20:45',arr:'27/01 08:26',pause:47},
-            {d:27,dep:'20:39',arr:'28/01 07:28',pause:49},
-            {d:28,dep:'20:40',arr:'29/01 08:10',pause:49},
-            {d:29,dep:'20:40',arr:'30/01 06:33',pause:49},
-          ],
-          '2026-1': [ // Février
-            {d:1,dep:'21:46',arr:'02/02 07:51',pause:46},
-            {d:2,dep:'20:45',arr:'03/02 07:30',pause:47},
-            {d:3,dep:'20:23',arr:'04/02 06:12',pause:45},
-            {d:4,dep:'20:17',arr:'05/02 07:00',pause:47},
-            {d:5,dep:'20:44',arr:'06/02 06:07',pause:45},
-            {d:8,dep:'21:44',arr:'09/02 07:04',pause:46},
-            {d:9,dep:'20:45',arr:'10/02 07:51',pause:47},
-            {d:10,dep:'20:35',arr:'11/02 07:18',pause:55},
-            {d:11,dep:'20:44',arr:'12/02 08:28',pause:46},
-            {d:12,dep:'20:35',arr:'13/02 06:30',pause:52},
-            {d:15,dep:'21:40',arr:'16/02 06:48',pause:46},
-            {d:16,dep:'20:38',arr:'17/02 07:25',pause:53},
-            {d:17,dep:'20:41',arr:'18/02 06:30',pause:47},
-            {d:18,dep:'20:44',arr:'19/02 10:17',pause:194},
-          ],
+        const activitesRealistes = {
+            "default": [
+                { t: 'Travail', s: '20:55', e: '21:02', type: 'travail' },
+                { t: 'Conduite', s: '21:02', e: '21:03', type: 'conduite' },
+                { t: 'Travail', s: '21:03', e: '21:20', type: 'travail' },
+                { t: 'Conduite', s: '21:20', e: '00:34', type: 'conduite' },
+                { t: 'Repos', s: '00:34', e: '01:19', type: 'repos' },
+                { t: 'Conduite', s: '01:19', e: '05:35', type: 'conduite' },
+                { t: 'Travail', s: '05:35', e: '06:04', type: 'travail' }
+            ]
         };
 
-        // ── FONCTIONS DE CALCUL ──────────────────────────────────────
-        function parseToMin(hStr) {
-            const [h, m] = hStr.split(':').map(Number);
-            return h * 60 + m;
+        function getMinutesDiff(start, end) {
+            const [h1, m1] = start.split(':').map(Number);
+            let [h2, m2] = end.split(':').map(Number);
+            if (h2 < h1 || (h2 === h1 && m2 < m1)) h2 += 24;
+            return (h2 * 60 + m2) - (h1 * 60 + m1);
         }
 
-        function totalServiceMin(dep, arr, pause) {
-            const depMin = parseToMin(dep);
-            let arrTime = arr.includes(' ') ? arr.split(' ')[1] : arr;
-            let arrMin = parseToMin(arrTime);
-            if (arrMin <= depMin) arrMin += 24 * 60;
-            return (arrMin - depMin) - pause;
+        function isMinuteNight(totalMin) {
+            const h = (Math.floor(totalMin / 60)) % 24;
+            return (h >= 21 || h < 6);
         }
-
-        function nightMin(dep, arr, pause) {
-            const depMin = parseToMin(dep);
-            let arrTime = arr.includes(' ') ? arr.split(' ')[1] : arr;
-            let arrMin = parseToMin(arrTime);
-            if (arrMin <= depMin) arrMin += 24 * 60;
-            // Plages nuit : 21h→24h et 0h→6h (J+1)
-            const ranges = [[1260, 1440], [1440, 1800]];
-            let total = 0;
-            for (const [ns, ne] of ranges) {
-                const s = Math.max(depMin, ns);
-                const e = Math.min(arrMin, ne);
-                if (e > s) total += e - s;
-            }
-            return Math.max(0, total - pause);
-        }
-
-        function fmtH(mins) {
-            const h = Math.floor(mins / 60);
-            const m = mins % 60;
-            return h + 'h' + String(m).padStart(2, '0');
-        }
-
-        function getTripKey(y, m) { return y + '-' + m; }
-
-        let curM = 2; let curY = 2026;
-        let tarifs = { repas: 9.81, prime: 40.00 };
-        const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
         function initApp() {
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
+            document.getElementById('valRepas').value = tarifs.repas;
+            document.getElementById('valPrime').value = tarifs.prime;
+            
             const grid = document.getElementById('grid');
             const tBody = document.getElementById('bodyTachy');
             const fList = document.getElementById('fraisList');
             const actList = document.getElementById('activitiesList');
-            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
             
             grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
+            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
+            
             let firstDay = new Date(curY, curM, 1).getDay();
             let shift = (firstDay === 0) ? 6 : firstDay - 1;
             for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
 
-            const days = new Date(curY, curM + 1, 0).getDate();
+            const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             let sumFrais = 0; let sumPrimes = 0;
-            let sumServiceMin = 0; let sumNuitMin = 0;
+            let totalServiceMois = 0; let totalNuitMois = 0;
 
-            for(let d=1; d<=days; d++) {
+            for(let d=1; d<=daysInMonth; d++) {
                 const date = new Date(curY, curM, d);
+                const dStr = `${curY}-${String(curM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayW = date.getDay();
-                let aTrav = (dayW !== 6); 
-                let fraisJ = aTrav ? tarifs.repas : 0;
-                let primeJ = (dayW === 0) ? tarifs.prime : 0;
 
-                grid.innerHTML += `<div class="day-box ${!aTrav ? 'rest' : 'worked'}" onclick="showHeures(${d}, ${(fraisJ + primeJ).toFixed(2)})">${d}</div>`;
+                let enConge = listeConges.some(p => dStr >= p.start && dStr <= p.end);
+                if (enConge) {
+                    grid.innerHTML += `<div class="day-box conge" onclick="alert('Jour de repos enregistré')">${d}</div>`;
+                    continue;
+                }
 
-                const key = getTripKey(curY, curM);
-                const trip = (TRIPS[key] || []).find(t => t.d === d);
-                if(aTrav) {
-                    let sMin = 0, nMin = 0, depStr = '—', arrStr = '—';
-                    if (trip) {
-                        sMin = totalServiceMin(trip.dep, trip.arr, trip.pause);
-                        nMin = nightMin(trip.dep, trip.arr, trip.pause);
-                        depStr = trip.dep;
-                        arrStr = trip.arr.includes(' ') ? trip.arr.split(' ')[1] : trip.arr;
-                    }
-                    sumServiceMin += sMin; sumNuitMin += nMin;
-                    const sStr = sMin > 0 ? fmtH(sMin) : '—';
-                    const nStr = nMin > 0 ? fmtH(nMin) : '—';
-                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${sStr}</td><td class="p-3 text-blue-400 font-black">${nStr}</td><td class="p-3 text-emerald-400 font-black">${(fraisJ+primeJ).toFixed(2)}€</td></tr>`;
-                    fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 ${dayW === 0 ? 'border-purple-500' : 'border-emerald-500'}"><div><p class="text-[8px] font-black text-slate-500 uppercase">${d} ${moisNoms[curM]}</p><p class="text-xs font-bold text-white italic">${dayW === 0 ? 'Repas + Prime' : 'Repas Unique'}</p></div><p class="text-xl font-black italic text-white">${(fraisJ+primeJ).toFixed(2)}€</p></div>`;
+                if(dayW !== 6) {
+                    let serviceJour = 0; let nuitJour = 0;
+                    const segments = activitesRealistes["default"];
+
+                    segments.forEach(seg => {
+                        if (seg.type !== 'repos') {
+                            const duration = getMinutesDiff(seg.s, seg.e);
+                            serviceJour += duration;
+                            const [hS, mS] = seg.s.split(':').map(Number);
+                            let currentTotalMin = hS * 60 + mS;
+                            for(let m=0; m < duration; m++) { if(isMinuteNight(currentTotalMin + m)) nuitJour++; }
+                        }
+                    });
+
+                    totalServiceMois += serviceJour; totalNuitMois += nuitJour;
+                    const hS = Math.floor(serviceJour/60); const mS = serviceJour%60;
+                    const hN = Math.floor(nuitJour/60); const mN = nuitJour%60;
+                    let f = tarifs.repas; let p = (dayW === 0 ? tarifs.prime : 0);
+                    if(d >= 15) { sumFrais += f; sumPrimes += p; }
+
+                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d}, '${hS}h${mS}', '${hN}h${mN}', ${(f + p).toFixed(2)})">${d}</div>`;
+                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${hS}h${mS}</td><td class="p-3 text-blue-400 font-black">${hN}h${mN}</td><td class="p-3 text-emerald-400 font-black">${(f+p).toFixed(2)}€</td></tr>`;
+                    fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 ${dayW === 0 ? 'border-purple-500' : 'border-emerald-500'}"><div><p class="text-[8px] font-black text-slate-500 uppercase">${d} ${moisNoms[curM]}</p><p class="text-xs font-bold text-white italic">${dayW===0?'Repas + Prime':'Repas Unique'}</p></div><p class="text-xl font-black italic text-white">${(f+p).toFixed(2)}€</p></div>`;
                     
                     const row = document.createElement('div');
                     row.className = "space-y-2 cursor-pointer";
-                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${d} ${moisNoms[curM]}</p><p class="text-[10px] font-black text-orange-500 uppercase">20:00 → 06:45</p></div>
-                        <div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5"><div class="color-travail" style="width:20%"></div><div class="color-conduite" style="width:40%"></div><div class="color-repos" style="width:10%"></div><div class="color-conduite" style="width:30%"></div></div>`;
-                    row.onclick = () => showTimeline(d);
+                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${d} ${moisNoms[curM]}</p><p class="text-[10px] font-black text-orange-500 uppercase">20:55 → 06:04</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${segments.map(s => `<div class="color-${s.type}" style="width:${(getMinutesDiff(s.s, s.e)/600)*100}%"></div>`).join('')}</div>`;
+                    row.onclick = () => showTimelineFromData(d, segments);
                     actList.appendChild(row);
-                    if(d >= 15) { sumFrais += fraisJ; sumPrimes += primeJ; }
+                } else {
+                    grid.innerHTML += `<div class="day-box rest">${d}</div>`;
                 }
             }
 
-            document.getElementById('totalService').innerText = fmtH(sumServiceMin);
-            document.getElementById('totalNuit').innerText = fmtH(sumNuitMin);
+            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + (totalServiceMois%60);
+            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + (totalNuitMois%60);
             document.getElementById('totalFraisTachy').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
-            let nM = (curM + 1) % 12;
-            document.getElementById('payrollPeriod').innerText = `Du 15 ${moisNoms[curM].substring(0,3)} au 14 ${moisNoms[nM].substring(0,3)}`;
             document.getElementById('totalPayroll').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
+            let nextM = (curM + 1) % 12;
+            document.getElementById('payrollPeriod').innerText = `Du 15 ${moisNoms[curM].substring(0,3)} au 14 ${moisNoms[nextM].substring(0,3)}`;
             document.getElementById('detailPayroll').innerText = `Frais: ${sumFrais.toFixed(2)}€ | Primes: ${sumPrimes.toFixed(2)}€`;
+            renderCongesList();
         }
 
-        // ── IMPORT .DDD VIA CLAUDE API ────────────────────────────────
-        let pendingImportData = null;
-
-        async function handleDDD(file) {
-            if (!file) return;
-            document.getElementById('importBox').classList.remove('hidden');
-            document.getElementById('importResult').classList.add('hidden');
-            document.getElementById('importError').classList.add('hidden');
-            setProgress(10, 'Lecture du fichier…', file.name);
-
-            // Read as base64
-            const base64 = await new Promise((res, rej) => {
-                const r = new FileReader();
-                r.onload = () => res(r.result.split(',')[1]);
-                r.onerror = () => rej(new Error('Lecture échouée'));
-                r.readAsDataURL(file);
-            });
-
-            setProgress(30, 'Envoi à Claude pour analyse…', 'Analyse du fichier tachygraphe');
-
-            const prompt = `Tu es un expert en analyse de fichiers tachygraphes numériques (.DDD).
-Analyse ce fichier binaire de carte conducteur et extrais TOUTES les activités.
-
-Pour chaque trajet/service, extrais :
-- Date (DD/MM/YYYY)
-- Heure début de service
-- Heure fin de service  
-- Durée conduite (HH:MM)
-- Durée autres travaux (HH:MM)
-- Durée pauses/repos (HH:MM)
-- Kilomètres parcourus
-
-Regroupe par mois. Réponds UNIQUEMENT en JSON valide :
-{
-  "conducteur": "Nom Prénom",
-  "carte": "numéro carte",
-  "mois": [
-    {
-      "annee": 2026,
-      "mois": 3,
-      "trajets": [
-        {
-          "jour": 1,
-          "dep": "20:30",
-          "arr": "07:15",
-          "conduite": "07:45",
-          "travaux": "01:30",
-          "pause": 45,
-          "km": 610
-        }
-      ]
-    }
-  ]
-}
-Mois de 1 à 12. pause en minutes. Ne mets rien avant ou après le JSON.`;
-
-            try {
-                setProgress(50, 'Claude analyse le fichier…', 'Extraction des données en cours');
-                const resp = await fetch('https://api.anthropic.com/v1/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: 'claude-sonnet-4-20250514',
-                        max_tokens: 8000,
-                        messages: [{
-                            role: 'user',
-                            content: [
-                                { type: 'text', text: 'Voici le fichier tachygraphe .DDD à analyser :' },
-                                { type: 'document', source: { type: 'base64', media_type: 'application/octet-stream', data: base64 } },
-                                { type: 'text', text: prompt }
-                            ]
-                        }]
-                    })
-                });
-
-                if (!resp.ok) throw new Error('Erreur API : ' + resp.status);
-                setProgress(80, 'Traitement des résultats…', '');
-
-                const apiData = await resp.json();
-                const raw = apiData.content.map(c => c.text || '').join('');
-                const clean = raw.replace(/```json|```/g, '').trim();
-                const parsed = JSON.parse(clean);
-
-                setProgress(100, 'Terminé !', '');
-                document.getElementById('importSpinner').classList.add('hidden');
-                pendingImportData = parsed;
-                showImportResult(parsed);
-
-            } catch(err) {
-                document.getElementById('importBox').classList.add('hidden');
-                document.getElementById('importError').classList.remove('hidden');
-                document.getElementById('importErrorMsg').innerText = err.message;
-            }
-        }
-
-        function setProgress(pct, status, detail) {
-            document.getElementById('importBar').style.width = pct + '%';
-            document.getElementById('importStatus').innerText = status;
-            document.getElementById('importDetail').innerText = detail;
-        }
-
-        function showImportResult(parsed) {
-            document.getElementById('importResult').classList.remove('hidden');
-            const moisNomsCourt = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-            let html = `<div class="font-bold text-white">${parsed.conducteur || '—'} — Carte ${parsed.carte || '—'}</div>`;
-            let totalTrajets = 0;
-            for (const mo of (parsed.mois || [])) {
-                const n = (mo.trajets || []).length;
-                totalTrajets += n;
-                html += `<div>📅 <b>${moisNomsCourt[(mo.mois||1)-1]} ${mo.annee}</b> — ${n} trajets</div>`;
-            }
-            html += `<div class="text-emerald-400 font-bold mt-1">Total : ${totalTrajets} trajets</div>`;
-            document.getElementById('importSummary').innerHTML = html;
-        }
-
-        function applyImport() {
-            if (!pendingImportData) return;
-            for (const mo of (pendingImportData.mois || [])) {
-                const yr = mo.annee;
-                const m = (mo.mois || 1) - 1;
-                const key = yr + '-' + m;
-                if (!TRIPS[key]) TRIPS[key] = [];
-                for (const tr of (mo.trajets || [])) {
-                    // Remove existing entry for same day
-                    const idx = TRIPS[key].findIndex(t => t.d === tr.jour);
-                    if (idx >= 0) TRIPS[key].splice(idx, 1);
-                    TRIPS[key].push({ d: tr.jour, dep: tr.dep, arr: tr.arr, pause: tr.pause || 45 });
-                }
-            }
+        function ajouterConge() {
+            const s = document.getElementById('congeStart').value;
+            const e = document.getElementById('congeEnd').value;
+            if(!s || !e) return;
+            listeConges.push({start: s, end: e});
+            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
             initApp();
-            navTo('dashboard');
-            alert('✓ ' + pendingImportData.mois.length + ' mois importés avec succès !');
         }
 
-        function showHeures(d, t) {
-            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM].toUpperCase();
-            const mKey = getTripKey(curY, curM);
-            const mTrip = (TRIPS[mKey] || []).find(tr => tr.d === d);
-            let mSvc = '—', mNuit = '—', mDep = '—', mArr = '—';
-            if (mTrip) {
-                mSvc = fmtH(totalServiceMin(mTrip.dep, mTrip.arr, mTrip.pause));
-                mNuit = fmtH(nightMin(mTrip.dep, mTrip.arr, mTrip.pause));
-                mDep = mTrip.dep;
-                mArr = mTrip.arr.includes(' ') ? mTrip.arr.split(' ')[1] : mTrip.arr;
-            }
-            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-500 uppercase">Départ</span><span class="font-black text-white">${mDep}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-500 uppercase">Fin service</span><span class="font-black text-white">${mArr}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-400 uppercase">Service (- pause)</span><span class="font-black text-white">${mSvc}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-blue-400 uppercase">Nuit 21h-6h (- pause)</span><span class="font-black text-blue-300">${mNuit}</span></div><div class="flex justify-between bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20"><span class="text-xs font-bold text-emerald-400 uppercase">Frais Jour</span><span class="font-black text-emerald-400">${t}€</span></div></div>`;
-            document.getElementById('dayModal').classList.remove('hidden');
+        function supprimerConge(i) {
+            listeConges.splice(i, 1);
+            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
+            initApp();
         }
 
-        function showTimeline(d) {
-            document.getElementById('modalDate').innerText = "Poste du " + d + " " + moisNoms[curM];
-            const data = [ { t: 'Travail', s: '20:00', e: '20:45', d: '0h45', c: '#eab308' }, { t: 'Conduite', s: '20:45', e: '23:30', d: '2h45', c: '#22c55e' }, { t: 'Repos', s: '23:30', e: '00:15', d: '0h45', c: '#ef4444' }, { t: 'Conduite', s: '00:15', e: '04:00', d: '3h45', c: '#22c55e' } ];
-            let html = '<div class="space-y-3">';
-            data.forEach(x => { html += `<div class="timeline-item"><div class="timeline-dot" style="background:${x.c}"></div><div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase" style="color:${x.c}">${x.t}</p><p class="text-sm font-black italic text-white">${x.d}</p></div><p class="text-[11px] text-slate-500 font-bold">${x.s} — ${x.e}</p></div>`; });
-            document.getElementById('modalBody').innerHTML = html + '</div>';
-            document.getElementById('dayModal').classList.remove('hidden');
+        function renderCongesList() {
+            const container = document.getElementById('listeCongesAffichage');
+            container.innerHTML = listeConges.map((c, index) => `
+                <div class="flex justify-between items-center bg-black/20 p-2 rounded border border-white/5">
+                    <span class="text-[9px] font-bold text-slate-300 uppercase">Du ${c.start} au ${c.end}</span>
+                    <button onclick="supprimerConge(${index})" class="text-red-500 text-xs">✕</button>
+                </div>
+            `).join('');
         }
 
+        function startSimulatedImport() {
+            const bar = document.getElementById('importProgress');
+            document.getElementById('cardProgressArea').classList.remove('hidden');
+            bar.style.width = "100%";
+            setTimeout(() => {
+                simulateInfractions();
+                alert("Lecture carte terminée !");
+                navTo('infractions');
+                document.getElementById('cardProgressArea').classList.add('hidden');
+                bar.style.width = "0%";
+            }, 2500);
+        }
+
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const area = document.getElementById('fileStatusArea');
+            const bar = document.getElementById('fileProgressBar');
+            const nameDisp = document.getElementById('fileNameDisplay');
+            const perc = document.getElementById('filePercent');
+            area.classList.remove('hidden');
+            nameDisp.innerText = file.name;
+            let p = 0;
+            const itv = setInterval(() => {
+                p += 10;
+                bar.style.width = p + "%";
+                perc.innerText = p + "%";
+                if(p >= 100) {
+                    clearInterval(itv);
+                    setTimeout(() => {
+                        simulateInfractions();
+                        alert("Fichier " + file.name + " importé !");
+                        navTo('dashboard');
+                        area.classList.add('hidden');
+                        bar.style.width = "0%";
+                    }, 500);
+                }
+            }, 100);
+        }
+
+        function simulateInfractions() {
+            document.getElementById('infractionsBody').innerHTML = `
+                <div class="glass-card p-4 border-l-4 border-red-500 flex justify-between items-center mb-4">
+                    <div><p class="text-[9px] font-black text-red-500 uppercase">12 Mars — 02:45</p><p class="text-xs font-bold text-white uppercase italic">Repos journalier insuffisant</p></div>
+                    <div class="bg-red-500/20 px-3 py-2 rounded-xl text-red-500 font-black text-[10px] italic border border-red-500/30">CLASSE 4</div>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-red-500 flex justify-between items-center">
+                    <div><p class="text-[9px] font-black text-red-500 uppercase">08 Mars — 23:15</p><p class="text-xs font-bold text-white uppercase italic">Dépassement conduite continue</p></div>
+                    <div class="bg-red-500/20 px-3 py-2 rounded-xl text-red-500 font-black text-[10px] italic border border-red-500/30">CLASSE 3</div>
+                </div>`;
+        }
+
+        // --- NAVIGATION CORRIGÉE ---
         function navTo(id) {
+            // Cacher toutes les pages
             document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
+            // Afficher la page demandée
             document.getElementById('view-' + id).classList.remove('hidden');
+            
+            // GESTION DU MENU MOIS : Masqué pour Paramètres et Importation
+            const navMois = document.getElementById('monthNav');
+            if(id === 'settings' || id === 'import' || id === 'infractions') {
+                navMois.style.display = 'none';
+            } else {
+                navMois.style.display = 'flex';
+            }
+
             toggleSidebar(false);
         }
 
-        function toggleSidebar(f) { const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; } s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; }
-        function setTab(t) { document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); }
+        function toggleSidebar(f) { 
+            const s = document.getElementById('sidebar'); 
+            const o = document.getElementById('overlay'); 
+            if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; }
+            s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; 
+        }
+
+        function setTab(t) { 
+            document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); 
+            document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); 
+            document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); 
+            document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); 
+        }
+
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
         function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-        function saveSettings() { tarifs.repas = parseFloat(document.getElementById('valRepas').value); tarifs.prime = parseFloat(document.getElementById('valPrime').value); initApp(); alert("Réglages sauvegardés !"); }
+        
+        function saveSettings() { 
+            tarifs.repas = parseFloat(document.getElementById('valRepas').value); 
+            tarifs.prime = parseFloat(document.getElementById('valPrime').value); 
+            localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
+            initApp(); alert("Réglages mis à jour !"); 
+        }
+
+        function showHeures(d, s, n, t) {
+            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM].toUpperCase();
+            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-400 uppercase italic">Service Total</span><span class="font-black text-white">${s}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-blue-400 uppercase italic">Heures de Nuit</span><span class="font-black text-white">${n}</span></div><div class="flex justify-between bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20"><span class="text-xs font-bold text-emerald-400 uppercase italic">Frais Journaliers</span><span class="font-black text-emerald-400">${t}€</span></div></div>`;
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function showTimelineFromData(d, segments) {
+            document.getElementById('modalDate').innerText = "Poste du " + d + " " + moisNoms[curM];
+            let html = '<div class="space-y-3">';
+            segments.forEach(x => { 
+                const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
+                const dur = getMinutesDiff(x.s, x.e);
+                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase" style="color:${color}">${x.t}</p><p class="text-sm font-black italic text-white">${Math.floor(dur/60)}h${dur%60}</p></div><p class="text-[11px] text-slate-500 font-bold">${x.s} — ${x.e}</p></div>`; 
+            });
+            document.getElementById('modalBody').innerHTML = html + '</div>';
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
