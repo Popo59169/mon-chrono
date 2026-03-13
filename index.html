@@ -2,206 +2,314 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chrono</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mon Chrono - Dylan Petit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
-        .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
-        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
+        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
+        .empty { visibility: hidden; }
+        .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #ff6b35; padding-bottom: 8px; font-style: italic; }
+        
+        .color-conduite { background: #22c55e; height: 100%; }
+        .color-travail { background: #eab308; height: 100%; }
+        .color-repos { background: #ef4444; height: 100%; }
+
         .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
         .sidebar.open { transform: translateX(0); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; backdrop-filter: blur(4px); }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
         .tab-active { background: #ff6b35 !important; color: white !important; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
+        
+        .timeline-item { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 15px; position: relative; padding-bottom: 15px; }
+        .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
+
+        .loading-bar { height: 4px; background: #ff6b35; width: 0%; transition: width 2s ease-in-out; border-radius: 2px; }
+        .card-slot { width: 100%; height: 8px; background: #000; border-radius: 4px; margin-top: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
     </style>
 </head>
-<body>
+<body onload="initApp()">
 
     <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
 
     <div id="sidebar" class="sidebar p-6">
-        <div class="flex justify-between items-center mb-10">
-            <h2 class="text-orange-500 font-black italic uppercase text-xl italic">Mon Chrono</h2>
-            <button onclick="toggleSidebar()" class="text-2xl text-slate-500">✕</button>
-        </div>
-        
-        <div class="mb-8 p-4 bg-slate-800/50 rounded-2xl border border-white/5 text-left">
-            <p id="sideName" class="text-sm font-black uppercase italic leading-none">Nom Conducteur</p>
-            <p class="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">Chauffeur Routier</p>
-        </div>
-
-        <nav class="flex flex-col gap-2">
-            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold flex items-center gap-3">📊 Tableau de bord</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold flex items-center gap-3">🚛 Activités</button>
-            <button onclick="navTo('infractions')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold flex items-center gap-3 text-red-400">⚠️ Infractions</button>
-            <hr class="border-slate-800 my-4">
-            <button onclick="navTo('import')" class="w-full text-left p-4 bg-orange-500/10 text-orange-500 rounded-xl font-black italic flex items-center gap-3 uppercase">📥 Importation</button>
+        <h2 class="text-orange-500 font-black italic uppercase text-2xl mb-10">Menu</h2>
+        <nav class="flex flex-col gap-3">
+            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📊 Dashboard</button>
+            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">🚛 Activités</button>
+            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">💰 Frais & Primes</button>
+            <button onclick="navTo('infractions')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">⚠️ Infractions</button>
+            <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📥 Importation</button>
+            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-slate-400 border-t border-white/10 mt-4 text-sm">⚙️ Paramètres</button>
         </nav>
     </div>
 
-    <header class="p-6 flex items-center gap-4">
-        <button onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center text-2xl shadow-lg active:scale-90 transition">🚛</button>
-        <div class="text-left">
-            <h1 class="text-xl font-black italic uppercase leading-none text-white">Mon <span class="text-orange-500">Chrono</span></h1>
-            <p id="headName" class="text-[9px] text-slate-500 font-bold uppercase mt-1 italic tracking-widest">Chauffeur Routier</p>
+    <header class="p-6 flex flex-col gap-4 sticky top-0 bg-[#0d1117] z-50">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl">🚛</button>
+            <div>
+                <h1 class="text-xl font-black italic uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
+                <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan Petit — Travail de Nuit</p>
+            </div>
+        </div>
+        
+        <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
+            <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
+            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">Mars 2026</span>
+            <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
         </div>
     </header>
 
-    <main class="px-6">
-        
-        <div id="view-dashboard" class="page-view">
-            <div class="flex gap-2 mb-6">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase tab-active transition-all">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase transition-all">Tachygraphe</button>
+    <main class="px-6 pb-10">
+        <div id="view-dashboard" class="page-view space-y-6">
+            <div class="flex gap-2">
+                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
+                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tachygraphe</button>
             </div>
-
+            
             <div id="sec-cal" class="glass-card p-5">
-                <h3 class="text-xs font-black uppercase text-slate-400 mb-4 italic">Mars 2026</h3>
-                <div id="grid" class="grid grid-cols-7 gap-2 text-center text-[9px] font-black text-slate-600 mb-2">
-                    <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span class="text-red-500">D</span>
-                </div>
-                <div id="gridBody" class="grid grid-cols-7 gap-2"></div>
+                <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
+                <div id="grid" class="grid grid-cols-7 gap-2"></div>
             </div>
 
-            <div id="sec-tachy" class="glass-card p-0 hidden overflow-hidden">
-                <table class="w-full text-[11px]">
-                    <thead class="bg-slate-800/50 text-slate-500 uppercase font-bold">
-                        <tr><th class="p-4 text-left">Date</th><th class="p-4 text-center">Service</th><th class="p-4 text-right text-blue-400">Nuit</th></tr>
-                    </thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="view-activities" class="page-view hidden">
-            <h2 class="text-xl font-black italic uppercase mb-6 underline decoration-orange-500">Chronologie</h2>
-            <div class="glass-card p-6 border-t-4 border-orange-500">
-                <div class="w-full h-4 bg-slate-800 rounded-full flex overflow-hidden mb-4">
-                    <div class="bg-green-600 h-full" style="width: 25%"></div>
-                    <div class="bg-red-600 h-full" style="width: 30%"></div>
-                    <div class="bg-indigo-600 h-full" style="width: 10%"></div>
-                    <div class="bg-red-600 h-full" style="width: 20%"></div>
-                    <div class="bg-green-600 h-full" style="width: 15%"></div>
-                </div>
-                <p class="text-[10px] text-slate-500 font-bold uppercase text-center italic">Aujourd'hui : 12 Mars 2026</p>
-            </div>
-        </div>
-
-        <div id="view-infractions" class="page-view hidden">
-            <div class="glass-card p-10 text-center">
-                <div class="text-5xl mb-4">✅</div>
-                <h3 class="font-black uppercase text-emerald-500 italic">RSE Conforme</h3>
-                <p class="text-[10px] text-slate-500 mt-2 uppercase font-bold tracking-tighter">Aucune infraction sur les 28 derniers jours</p>
-            </div>
-        </div>
-
-        <div id="view-import" class="page-view hidden">
-            <h2 class="text-xl font-black uppercase italic mb-6 text-orange-500">📥 Importation</h2>
-            <div class="flex flex-col gap-4">
-                <button onclick="simulRead()" class="w-full py-6 bg-indigo-600 rounded-3xl font-black uppercase text-xs shadow-xl active:scale-95 transition">💳 Lire Carte USB (OTG)</button>
-                
-                <div class="p-6 glass-card border-dashed border-2 border-slate-700 flex flex-col items-center gap-4">
-                    <div class="text-3xl">📂</div>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Fichiers numériques .C1B / .DDD</p>
-                    <button onclick="document.getElementById('fileInput').click()" class="w-full py-4 bg-slate-800 rounded-2xl font-black uppercase text-[10px] border border-slate-700">Parcourir les fichiers</button>
-                    <input type="file" id="fileInput" class="hidden" accept=".c1b,.ddd">
+            <div id="sec-tachy" class="hidden space-y-4">
+                <div class="glass-card overflow-hidden">
+                    <table class="w-full text-[10px] text-left border-collapse">
+                        <thead class="bg-white/10 text-orange-500 font-black uppercase italic">
+                            <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
+                        </thead>
+                        <tbody id="bodyTachy"></tbody>
+                        <tfoot class="bg-orange-500/20 font-black italic text-white border-t border-white/20">
+                            <tr><td class="p-3">TOTAUX</td><td id="totalService" class="p-3 text-orange-500">0h</td><td id="totalNuit" class="p-3 text-blue-400">0h</td><td id="totalFraisTachy" class="p-3 text-emerald-400">0€</td></tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
-            <p id="status" class="mt-6 text-center text-orange-500 font-black uppercase text-[10px] hidden animate-pulse">Synchronisation en cours...</p>
         </div>
 
+        <div id="view-activities" class="page-view hidden space-y-6">
+            <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
+            <div id="activitiesList" class="space-y-6"></div>
+        </div>
+
+        <div id="view-frais" class="page-view hidden space-y-6">
+            <div id="payrollSummary" class="glass-card p-5 border-l-4 border-emerald-500 flex justify-between items-center mb-4">
+                <div>
+                    <p id="payrollPeriod" class="text-[9px] font-black text-slate-500 uppercase italic mb-1">---</p>
+                    <p class="text-[10px] font-bold uppercase text-white">Total Paie Estimé</p>
+                </div>
+                <div class="text-right">
+                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-400">0.00€</p>
+                    <p id="detailPayroll" class="text-[8px] font-bold text-slate-400 uppercase">---</p>
+                </div>
+            </div>
+            <div id="fraisList" class="space-y-4"></div>
+        </div>
+
+        <div id="view-infractions" class="page-view hidden space-y-6">
+            <h2 class="text-xl font-black italic uppercase">Infractions Détectées</h2>
+            <div id="infractionsBody" class="space-y-4">
+                <div class="glass-card p-6 text-center border-l-4 border-emerald-500">
+                    <p class="text-slate-400 font-bold italic uppercase text-[10px]">Aucune donnée. Importez un fichier .DDD</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-import" class="page-view hidden space-y-6">
+            <h2 class="text-xl font-black italic uppercase">Importation .DDD</h2>
+            <p class="text-[10px] text-slate-400 italic">Branchez votre lecteur USB-C, insérez la carte, puis sélectionnez le fichier .DDD généré.</p>
+
+            <!-- DROP ZONE -->
+            <div id="dropZone" class="glass-card p-8 border-2 border-dashed border-orange-500/30 rounded-2xl flex flex-col items-center gap-4 cursor-pointer hover:bg-orange-500/5 transition-all relative"
+                 onclick="document.getElementById('dddInput').click()"
+                 ondragover="event.preventDefault();this.classList.add('border-orange-500')"
+                 ondragleave="this.classList.remove('border-orange-500')"
+                 ondrop="event.preventDefault();this.classList.remove('border-orange-500');handleDDD(event.dataTransfer.files[0])">
+                <input id="dddInput" type="file" accept=".ddd,.DDD,application/octet-stream" class="hidden" onchange="handleDDD(this.files[0])"/>
+                <div class="text-5xl">💳</div>
+                <div class="text-center">
+                    <p class="font-black uppercase italic text-white text-sm">Déposer ou sélectionner</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Fichier .DDD de votre carte tachygraphe</p>
+                </div>
+                <div class="flex items-center gap-2 bg-orange-600 px-6 py-3 rounded-xl">
+                    <span class="text-white font-black uppercase text-[10px] italic">📂 Choisir le fichier .DDD</span>
+                </div>
+            </div>
+
+            <!-- PROGRESS -->
+            <div id="importBox" class="hidden glass-card p-6 border-l-4 border-orange-500 space-y-4">
+                <div class="flex items-center gap-3">
+                    <div id="importSpinner" class="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p id="importStatus" class="font-black italic uppercase text-xs text-orange-400">Lecture en cours…</p>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div id="importBar" class="h-full bg-orange-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                </div>
+                <p id="importDetail" class="text-[10px] text-slate-400 italic"></p>
+            </div>
+
+            <!-- RESULT -->
+            <div id="importResult" class="hidden glass-card p-6 border-l-4 border-emerald-500 space-y-3">
+                <p class="font-black italic uppercase text-xs text-emerald-400">✓ Données importées</p>
+                <div id="importSummary" class="text-[10px] text-slate-300 space-y-1"></div>
+                <button onclick="applyImport()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white mt-2">✓ Intégrer dans l'application</button>
+            </div>
+
+            <!-- ERROR -->
+            <div id="importError" class="hidden glass-card p-6 border-l-4 border-red-500">
+                <p class="font-black italic uppercase text-xs text-red-400 mb-2">⚠ Erreur</p>
+                <p id="importErrorMsg" class="text-[10px] text-slate-300"></p>
+            </div>
+        </div>
+
+        <div id="view-settings" class="page-view hidden space-y-6">
+            <h2 class="text-xl font-black italic uppercase text-slate-500">Réglages</h2>
+            <div class="glass-card p-6 space-y-4">
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" step="0.01" value="9.81" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche</span><input type="number" id="valPrime" step="0.01" value="40.00" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Sauvegarder les tarifs</button>
+            </div>
+        </div>
     </main>
 
-    <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onclick="closeModal()"></div>
-        <div class="glass-card w-full max-w-sm p-8 relative border-t-8 border-orange-500 animate-in slide-in-from-bottom duration-300">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modalDate" class="text-3xl font-black italic text-white uppercase tracking-tighter">DATE</h3>
-                <div class="text-right">
-                    <p class="text-[9px] text-slate-500 font-black uppercase">Service</p>
-                    <p class="text-2xl font-black text-orange-500">10h30</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4 mb-8 text-left">
-                <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                    <p class="text-[9px] text-indigo-400 font-black uppercase mb-1">Travail de Nuit</p>
-                    <p class="text-xl font-black text-white">07h20</p>
-                </div>
-                <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                    <p class="text-[9px] text-emerald-400 font-black uppercase mb-1">Frais Nets</p>
-                    <p class="text-xl font-black text-white">22.42€</p>
-                </div>
-            </div>
-            <button onclick="closeModal()" class="w-full py-5 bg-orange-600 rounded-3xl font-black uppercase text-xs shadow-lg shadow-orange-900/40">Fermer la fiche</button>
+    <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
+        <div class="absolute inset-0 bg-black/80" onclick="closeModal()"></div>
+        <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
+            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-white">-- ---</h3>
+            <div id="modalBody"></div>
+            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white shadow-xl">Fermer</button>
         </div>
     </div>
 
     <script>
-        function toggleSidebar() {
-            const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('overlay');
-            const isOpen = sb.classList.contains('open');
-            sb.classList.toggle('open');
-            ov.style.display = isOpen ? 'none' : 'block';
-        }
 
-        function navTo(id) {
-            document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
-            document.getElementById('view-' + id).classList.remove('hidden');
-            toggleSidebar();
-        }
-
-        function setTab(type) {
-            document.getElementById('sec-cal').classList.toggle('hidden', type !== 'cal');
-            document.getElementById('sec-tachy').classList.toggle('hidden', type !== 'tachy');
-            document.getElementById('btnCal').classList.toggle('tab-active', type === 'cal');
-            document.getElementById('btnTachy').classList.toggle('tab-active', type === 'tachy');
-        }
-
-        function openModal(d) {
-            document.getElementById('modalDate').innerText = d + " MARS";
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
-
-        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-
-        function simulRead() {
-            const s = document.getElementById('status');
-            s.classList.remove('hidden');
-            setTimeout(() => {
-                const name = "DYLAN PETIT";
-                document.getElementById('sideName').innerText = name;
-                document.getElementById('headName').innerText = name + " — CHAUFFEUR ROUTIER";
-                s.innerHTML = "✅ CARTE SYNCHRONISÉE";
-                setTimeout(() => { s.classList.add('hidden'); navTo('dashboard'); }, 1000);
-            }, 2000);
-        }
-
-        function init() {
-            const grid = document.getElementById('gridBody');
-            const table = document.getElementById('tableBody');
-            grid.innerHTML = ""; table.innerHTML = "";
-
-            for(let d=1; d<=31; d++) {
-                const isOff = (d % 7 == 0 || d % 7 == 6);
-                const day = document.createElement('div');
-                day.className = `day-box ${isOff ? 'rest' : 'worked'}`;
-                day.innerText = d;
-                if(!isOff) day.onclick = () => openModal(d);
-                grid.appendChild(day);
-
-                if(!isOff) {
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b border-white/5";
-                    tr.innerHTML = `<td class="p-4 text-slate-400 font-bold">${d}/03</td><td class="p-4 text-center font-black">10h30</td><td class="p-4 text-right text-blue-400 font-black">07h20</td>`;
-                    table.appendChild(tr);
-                }
-            }
-        }
-        window.onload = init;
-    </script>
-</body>
-</html>
+        // ── DONNÉES RÉELLES TACHYGRAPHE ──────────────────────────────
+        const TRIPS = {
+          '2025-7': [ // Août
+            {d:1,dep:'18:38',arr:'02/08 04:20',pause:46},
+            {d:4,dep:'19:58',arr:'05/08 03:59',pause:49},
+            {d:5,dep:'20:06',arr:'06/08 03:33',pause:55},
+            {d:6,dep:'19:16',arr:'07/08 03:42',pause:50},
+            {d:7,dep:'19:59',arr:'08/08 04:03',pause:47},
+            {d:8,dep:'19:56',arr:'09/08 03:26',pause:46},
+            {d:11,dep:'18:10',arr:'12/08 01:31',pause:47},
+            {d:12,dep:'18:22',arr:'13/08 02:02',pause:46},
+            {d:13,dep:'18:13',arr:'14/08 02:52',pause:52},
+            {d:17,dep:'21:28',arr:'18/08 07:54',pause:61},
+            {d:18,dep:'20:48',arr:'19/08 07:15',pause:47},
+            {d:19,dep:'20:45',arr:'20/08 06:33',pause:49},
+            {d:20,dep:'20:44',arr:'21/08 07:29',pause:47},
+            {d:21,dep:'20:46',arr:'22/08 06:30',pause:48},
+            {d:24,dep:'21:43',arr:'25/08 06:49',pause:47},
+            {d:25,dep:'20:45',arr:'26/08 07:30',pause:47},
+            {d:26,dep:'20:41',arr:'27/08 05:48',pause:48},
+            {d:27,dep:'20:16',arr:'28/08 08:25',pause:118},
+            {d:28,dep:'21:42',arr:'29/08 08:32',pause:46},
+            {d:31,dep:'21:40',arr:'01/09 06:36',pause:46},
+          ],
+          '2025-8': [ // Septembre
+            {d:1,dep:'20:42',arr:'02/09 07:15',pause:48},
+            {d:2,dep:'20:46',arr:'03/09 05:48',pause:48},
+            {d:3,dep:'20:41',arr:'04/09 07:27',pause:47},
+            {d:4,dep:'20:44',arr:'05/09 06:18',pause:48},
+            {d:7,dep:'21:43',arr:'08/09 08:06',pause:47},
+            {d:8,dep:'20:48',arr:'09/09 08:18',pause:45},
+            {d:9,dep:'20:43',arr:'10/09 07:20',pause:49},
+            {d:10,dep:'20:47',arr:'11/09 07:31',pause:45},
+            {d:11,dep:'20:34',arr:'12/09 05:36',pause:48},
+            {d:14,dep:'21:39',arr:'15/09 07:57',pause:52},
+            {d:15,dep:'20:41',arr:'16/09 07:14',pause:48},
+            {d:16,dep:'20:47',arr:'17/09 05:57',pause:46},
+            {d:17,dep:'20:47',arr:'18/09 07:28',pause:47},
+            {d:18,dep:'19:48',arr:'19/09 05:37',pause:47},
+            {d:21,dep:'21:37',arr:'22/09 06:55',pause:58},
+            {d:22,dep:'20:43',arr:'23/09 06:28',pause:47},
+            {d:23,dep:'20:56',arr:'24/09 08:09',pause:67},
+            {d:24,dep:'20:53',arr:'25/09 07:38',pause:45},
+            {d:25,dep:'20:48',arr:'26/09 06:55',pause:46},
+            {d:28,dep:'21:43',arr:'29/09 07:27',pause:49},
+            {d:29,dep:'21:02',arr:'30/09 07:40',pause:45},
+            {d:30,dep:'20:49',arr:'01/10 06:04',pause:46},
+          ],
+          '2025-9': [ // Octobre
+            {d:1,dep:'20:44',arr:'02/10 07:31',pause:48},
+            {d:2,dep:'20:43',arr:'03/10 06:31',pause:45},
+            {d:5,dep:'21:37',arr:'06/10 07:36',pause:46},
+            {d:6,dep:'20:46',arr:'07/10 07:33',pause:47},
+            {d:7,dep:'20:42',arr:'08/10 06:19',pause:46},
+            {d:8,dep:'20:41',arr:'09/10 08:57',pause:53},
+            {d:9,dep:'20:50',arr:'10/10 06:53',pause:46},
+            {d:12,dep:'21:43',arr:'13/10 07:47',pause:46},
+            {d:13,dep:'20:56',arr:'14/10 08:43',pause:47},
+            {d:14,dep:'20:45',arr:'15/10 06:54',pause:45},
+            {d:15,dep:'20:42',arr:'16/10 07:27',pause:47},
+            {d:16,dep:'20:45',arr:'17/10 06:39',pause:45},
+            {d:20,dep:'20:37',arr:'21/10 06:57',pause:48},
+            {d:21,dep:'20:33',arr:'22/10 05:34',pause:52},
+            {d:22,dep:'20:30',arr:'23/10 07:21',pause:46},
+            {d:23,dep:'20:26',arr:'24/10 07:11',pause:52},
+            {d:26,dep:'21:37',arr:'27/10 07:19',pause:53},
+            {d:27,dep:'20:41',arr:'28/10 07:54',pause:54},
+            {d:28,dep:'20:29',arr:'29/10 06:07',pause:55},
+            {d:29,dep:'20:42',arr:'30/10 06:53',pause:45},
+            {d:30,dep:'20:44',arr:'31/10 06:12',pause:48},
+          ],
+          '2025-10': [ // Novembre
+            {d:2,dep:'21:47',arr:'03/11 07:04',pause:45},
+            {d:3,dep:'20:41',arr:'04/11 07:58',pause:49},
+            {d:4,dep:'19:26',arr:'05/11 05:33',pause:46},
+            {d:5,dep:'20:42',arr:'06/11 08:19',pause:48},
+            {d:6,dep:'20:40',arr:'07/11 06:34',pause:45},
+            {d:9,dep:'21:41',arr:'10/11 06:50',pause:47},
+            {d:11,dep:'21:29',arr:'12/11 07:27',pause:52},
+            {d:12,dep:'20:42',arr:'13/11 07:00',pause:47},
+            {d:13,dep:'20:43',arr:'14/11 06:28',pause:46},
+            {d:16,dep:'21:43',arr:'17/11 07:11',pause:48},
+            {d:17,dep:'20:45',arr:'18/11 07:32',pause:47},
+            {d:18,dep:'20:44',arr:'19/11 06:55',pause:46},
+            {d:19,dep:'20:44',arr:'20/11 07:30',pause:46},
+            {d:20,dep:'20:40',arr:'21/11 07:08',pause:47},
+            {d:23,dep:'21:42',arr:'24/11 07:21',pause:46},
+            {d:24,dep:'20:50',arr:'25/11 07:37',pause:47},
+            {d:25,dep:'19:53',arr:'26/11 05:56',pause:47},
+            {d:26,dep:'20:44',arr:'27/11 07:31',pause:591},
+            {d:27,dep:'20:38',arr:'28/11 07:21',pause:57},
+            {d:30,dep:'21:32',arr:'01/12 07:15',pause:55},
+          ],
+          '2025-11': [ // Décembre
+            {d:1,dep:'20:36',arr:'02/12 07:23',pause:46},
+            {d:2,dep:'20:41',arr:'03/12 06:49',pause:50},
+            {d:3,dep:'20:45',arr:'04/12 08:40',pause:46},
+            {d:4,dep:'20:49',arr:'05/12 06:09',pause:47},
+            {d:7,dep:'21:45',arr:'08/12 07:44',pause:46},
+            {d:8,dep:'20:51',arr:'09/12 07:34',pause:52},
+            {d:9,dep:'20:39',arr:'10/12 07:26',pause:47},
+            {d:10,dep:'20:48',arr:'11/12 07:03',pause:46},
+            {d:11,dep:'20:40',arr:'12/12 06:52',pause:45},
+            {d:14,dep:'21:45',arr:'15/12 07:05',pause:46},
+            {d:15,dep:'20:41',arr:'16/12 06:35',pause:47},
+            {d:16,dep:'20:39',arr:'17/12 05:33',pause:53},
+            {d:17,dep:'20:38',arr:'18/12 07:36',pause:45},
+            {d:18,dep:'20:31',arr:'19/12 05:31',pause:59},
+            {d:28,dep:'21:37',arr:'29/12 07:11',pause:51},
+            {d:29,dep:'20:44',arr:'30/12 05:54',pause:46},
+            {d:30,dep:'20:35',arr:'31/12 06:16',pause:56},
+          ],
+          '2026-0': [ // Janvier
+            {d:1,dep:'21:37',arr:'02/01 06:35',pause:55},
+            {d:4,dep:'21:40',arr:'05/01 07:08',pause:47},
+            {d:7,dep:'18:58',arr:'08/01 05:03',pause:46},
+            {d:8,dep:'18:50',arr:'09/01 04:31',pause:46},
+            {d:11,dep:'21:43',arr:'12/01 07:18',pause:47},
+            {d:12,dep:'20:41',arr:'13/01 07:27',pause:46},
+            {d:13,dep:'20:37',arr:'14/01 05:50',pause:46},
+            {d:14,dep:'20:37',arr:'15/01 07:30',pause:54},
+            {d:15,dep:'20:35',arr:'16/01 06:42',pause:57},
+            {d:18,dep:'21:43',arr:'19/01 07:21',pause:47},
+            {d:19,dep:'20:32',arr:'20/01 07:16',pause:57},
+            {d:20,dep:'20:41',arr:
