@@ -49,7 +49,7 @@
             <div onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
             <div>
                 <h1 class="text-xl font-black italic uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan Petit — Service de Nuit</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan Petit — Conducteur de Nuit</p>
             </div>
         </div>
         <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
@@ -61,16 +61,32 @@
 
     <main class="px-6 pb-10">
         <div id="view-dashboard" class="page-view">
+            <div class="glass-card p-4 mb-6 border-b-4 border-orange-500 flex justify-around items-center">
+                <div class="text-center">
+                    <p id="labelAnnee" class="text-[8px] font-black text-slate-500 uppercase italic">Année 2026</p>
+                    <p id="countTravailAnnuel" class="text-2xl font-black italic text-orange-500">0</p>
+                    <p class="text-[8px] font-bold text-white uppercase">Jours travaillés</p>
+                </div>
+                <div class="w-[1px] h-10 bg-white/10"></div>
+                <div class="text-center">
+                    <p class="text-[8px] font-black text-slate-500 uppercase italic">Compteur</p>
+                    <p id="countCongeAnnuel" class="text-2xl font-black italic text-blue-400">0</p>
+                    <p class="text-[8px] font-bold text-white uppercase">Jours Congés</p>
+                </div>
+            </div>
+
             <div class="flex gap-2 mb-6">
                 <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
                 <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tachygraphe</button>
             </div>
+
             <div id="sec-cal" class="space-y-4">
                 <div class="glass-card p-5">
                     <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
                     <div id="grid" class="grid grid-cols-7 gap-2"></div>
                 </div>
             </div>
+
             <div id="sec-tachy" class="hidden space-y-4">
                 <div class="glass-card overflow-hidden">
                     <table class="w-full text-[10px] text-left border-collapse">
@@ -107,13 +123,13 @@
 
         <div id="view-import" class="page-view hidden space-y-6">
             <div class="glass-card p-6 border-l-4 border-blue-500">
-                <h3 class="text-[10px] font-black uppercase italic text-white mb-4">Importer un fichier .CSV</h3>
+                <h3 class="text-[10px] font-black uppercase italic text-white mb-4">Gestion des données</h3>
                 <div class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30 cursor-pointer" onclick="document.getElementById('fileInput').click()">
-                    <span class="text-3xl mb-2">📄</span>
-                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Ajouter un nouveau fichier (Cumulatif)</p>
+                    <span class="text-3xl mb-2">📥</span>
+                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Ajouter un fichier CSV (Cumul)</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
                 </div>
-                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-500/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic hover:bg-red-500/10 transition">🗑️ Tout effacer et repartir à zéro</button>
+                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-500/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic hover:bg-red-500/10 transition">🗑️ Tout effacer</button>
             </div>
         </div>
 
@@ -136,7 +152,6 @@
     </div>
 
     <script>
-        // Détection de la date actuelle pour l'initialisation
         let now = new Date();
         let curM = now.getMonth(); 
         let curY = now.getFullYear();
@@ -178,11 +193,7 @@
                         dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
                     });
                 });
-
-                // Récupérer l'existant
                 let existingPostes = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
-                
-                // Traiter les nouveaux
                 const newPostes = {};
                 let currentPosteDate = null;
                 newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
@@ -192,32 +203,21 @@
                     } else if (act.dureeMinutes > 420) { currentPosteDate = null; }
                     else if (currentPosteDate) { newPostes[currentPosteDate].push(act); }
                 });
-
-                // FUSION : On écrase seulement si la date existe déjà, sinon on ajoute
                 const mergedData = { ...existingPostes, ...newPostes };
                 localStorage.setItem('monChrono_data_csv', JSON.stringify(mergedData));
-                
-                // Sauter au mois du dernier fichier importé
-                const lastDate = Object.keys(newPostes).pop();
-                if(lastDate) {
-                    const [ld, lm, ly] = lastDate.split('/').map(Number);
-                    curM = lm - 1; curY = ly;
-                }
-
                 initApp();
                 navTo('dashboard');
-                alert("Données ajoutées avec succès !");
+                alert("Importation réussie !");
             };
             reader.readAsText(file);
         }
 
         function clearAllData() {
-            if(confirm("Attention : cela va supprimer toutes tes activités et congés enregistrés. Continuer ?")) {
+            if(confirm("Tout supprimer ?")) {
                 localStorage.removeItem('monChrono_data_csv');
                 localStorage.removeItem('monChrono_conges');
                 listeConges = [];
                 initApp();
-                alert("Mémoire vidée.");
             }
         }
 
@@ -244,11 +244,8 @@
 
         function initApp() {
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
-            document.getElementById('valRepas').value = tarifs.repas;
-            document.getElementById('valPrime').value = tarifs.prime;
-            const nextM = (curM === 11) ? 0 : curM + 1;
-            document.getElementById('payrollPeriod').innerText = `Frais: 15 ${moisNoms[curM]} - 14 ${moisNoms[nextM]} | Primes: Mois Civil`;
-
+            document.getElementById('labelAnnee').innerText = "Année " + curY;
+            
             const dataCSV = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
             const grid = document.getElementById('grid');
             const tBody = document.getElementById('bodyTachy');
@@ -263,7 +260,21 @@
             for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
 
             let sumFraisPaie = 0, sumPrimesMois = 0, totalServiceMois = 0, totalNuitMois = 0, totalFraisTachy = 0;
+            let countTravailAnnuel = 0, countCongeAnnuel = 0;
 
+            // --- CALCULS ANNUELS ---
+            Object.keys(dataCSV).forEach(dateStr => {
+                const [d, m, y] = dateStr.split('/').map(Number);
+                if (y === curY) countTravailAnnuel++;
+            });
+            listeConges.forEach(dateStr => {
+                const [d, m, y] = dateStr.split('/').map(Number);
+                if (y === curY) countCongeAnnuel++;
+            });
+            document.getElementById('countTravailAnnuel').innerText = countTravailAnnuel;
+            document.getElementById('countCongeAnnuel').innerText = countCongeAnnuel;
+
+            // --- REMPLISSAGE MOIS ---
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             for(let d=1; d<=daysInMonth; d++) {
                 const dFormatted = `${String(d).padStart(2, '0')}/${String(curM + 1).padStart(2, '0')}/${curY}`;
@@ -276,7 +287,6 @@
                     totalServiceMois += sJ; totalNuitMois += nJ;
                     let fraisJ = (sJ > 240) ? tarifs.repas : 0;
                     totalFraisTachy += fraisJ;
-
                     grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${sJ%60}','${Math.floor(nJ/60)}h${nJ%60}')">${d}</div>`;
                     tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${Math.floor(sJ/60)}h${sJ%60}</td><td class="p-3 text-blue-400 font-black">${Math.floor(nJ/60)}h${nJ%60}</td><td class="p-3 text-emerald-400 font-black">${fraisJ.toFixed(2)}€</td></tr>`;
                     
@@ -290,13 +300,13 @@
                 }
             }
 
+            // LOGIQUE FRAIS & PRIMES
             Object.keys(dataCSV).forEach(dateStr => {
                 const [d, m, y] = dateStr.split('/').map(Number);
                 const dateDepart = new Date(y, m-1, d);
                 const poste = dataCSV[dateStr];
                 let serviceMins = 0;
                 poste.forEach(a => { if(a.type!=='repos') serviceMins += a.dureeMinutes; });
-
                 if (serviceMins > 0) {
                     if (dateDepart.getMonth() === curM && dateDepart.getFullYear() === curY) {
                         if (dateDepart.getDay() === 0 || estJourFerie(dateDepart)) {
@@ -308,9 +318,7 @@
                         const hDep = parseInt(poste[0].heure.split(':')[0]);
                         let dateComptable = new Date(dateDepart);
                         if (hDep >= 18) dateComptable.setDate(dateDepart.getDate() + 1);
-                        const startPaie = new Date(curY, curM, 15);
-                        const endPaie = new Date(curY, curM+1, 14);
-                        if (dateComptable >= startPaie && dateComptable <= endPaie) {
+                        if (dateComptable >= new Date(curY, curM, 15) && dateComptable <= new Date(curY, curM+1, 14)) {
                             sumFraisPaie += tarifs.repas;
                             fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">Départ ${dateStr}</p><p class="text-xs font-bold text-white italic">Repas Nuit (Bascule)</p></div><p class="text-xl font-black text-white">${tarifs.repas}€</p></div>`;
                         }
@@ -325,46 +333,42 @@
             document.getElementById('detailPayroll').innerText = `Frais: ${sumFraisPaie.toFixed(2)}€ | Primes: ${sumPrimesMois.toFixed(2)}€`;
         }
 
+        // FONCTIONS NAVIGATION ET MODALES
         function navTo(id) {
             document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + id).classList.remove('hidden');
             toggleSidebar(false);
         }
-
         function toggleSidebar(f) { 
             const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); 
             if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; }
             s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; 
         }
-
         function setTab(t) { 
             document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); 
             document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); 
             document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); 
             document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); 
         }
-
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
         function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
         function saveSettings() { 
             tarifs.repas = parseFloat(document.getElementById('valRepas').value); 
             tarifs.prime = parseFloat(document.getElementById('valPrime').value); 
             localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
-            initApp(); alert("Réglages enregistrés !"); 
+            initApp(); alert("Enregistré"); 
         }
-
         function showHeures(d, s, n) {
-            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM].toUpperCase();
-            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-400 uppercase italic">Service Total</span><span class="font-black text-white">${s}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-blue-400 uppercase italic">Heures de Nuit</span><span class="font-black text-white">${n}</span></div></div>`;
+            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM];
+            document.getElementById('modalBody').innerHTML = `<p class="text-white font-black">Service: ${s}</p><p class="text-blue-400 font-black">Nuit: ${n}</p>`;
             document.getElementById('dayModal').classList.remove('hidden');
         }
-
         function showTimelineFromData(d, segments) {
-            document.getElementById('modalDate').innerText = "Poste du " + d + " " + moisNoms[curM];
+            document.getElementById('modalDate').innerText = "Détail du " + d;
             let html = '<div class="space-y-3">';
             segments.forEach(x => { 
                 const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase" style="color:${color}">${x.label}</p><p class="text-sm font-black italic text-white">${Math.floor(x.dureeMinutes/60)}h${x.dureeMinutes%60}</p></div><p class="text-[11px] text-slate-500 font-bold">${x.heure}</p></div>`; 
+                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black text-white">${Math.floor(x.dureeMinutes/60)}h${x.dureeMinutes%60}</p></div>`; 
             });
             document.getElementById('modalBody').innerHTML = html + '</div>';
             document.getElementById('dayModal').classList.remove('hidden');
