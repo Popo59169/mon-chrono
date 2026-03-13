@@ -110,9 +110,10 @@
                 <h3 class="text-[10px] font-black uppercase italic text-white mb-4">Importer un fichier .CSV</h3>
                 <div class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30 cursor-pointer" onclick="document.getElementById('fileInput').click()">
                     <span class="text-3xl mb-2">📄</span>
-                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Sélectionner ACTIVITIES_DYLAN_PETIT.csv</p>
+                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Ajouter un nouveau fichier (Cumulatif)</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
                 </div>
+                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-500/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic hover:bg-red-500/10 transition">🗑️ Tout effacer et repartir à zéro</button>
             </div>
         </div>
 
@@ -135,8 +136,10 @@
     </div>
 
     <script>
-        let curM = 1; 
-        let curY = 2026;
+        // Détection de la date actuelle pour l'initialisation
+        let now = new Date();
+        let curM = now.getMonth(); 
+        let curY = now.getFullYear();
         let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { repas: 9.81, prime: 40.00 };
         let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -155,7 +158,7 @@
             reader.onload = function(e) {
                 const text = e.target.result;
                 const rows = text.split('\n');
-                let allActivities = [];
+                let newActivities = [];
                 rows.forEach(row => {
                     const cols = row.replace(/"/g, '').split(';');
                     if (cols.length < 5) return;
@@ -167,7 +170,7 @@
                     const timestamp = new Date(a, m - 1, j, hh, mm).getTime();
                     const duree = cols[4];
                     if (cols[2].includes("Card") || !duree.includes(":")) return;
-                    allActivities.push({
+                    newActivities.push({
                         timestamp, date: dateStr, 
                         heure: dtParts[1].substring(0,5),
                         type: cols[2].toLowerCase().includes('repos') ? 'repos' : (cols[2].toLowerCase().includes('conduite') ? 'conduite' : 'travail'),
@@ -175,20 +178,47 @@
                         dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
                     });
                 });
-                const postes = {};
+
+                // Récupérer l'existant
+                let existingPostes = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
+                
+                // Traiter les nouveaux
+                const newPostes = {};
                 let currentPosteDate = null;
-                allActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
+                newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
                     if (act.type !== 'repos') {
-                        if (!currentPosteDate) { currentPosteDate = act.date; postes[currentPosteDate] = []; }
-                        postes[currentPosteDate].push(act);
+                        if (!currentPosteDate) { currentPosteDate = act.date; newPostes[currentPosteDate] = []; }
+                        newPostes[currentPosteDate].push(act);
                     } else if (act.dureeMinutes > 420) { currentPosteDate = null; }
-                    else if (currentPosteDate) { postes[currentPosteDate].push(act); }
+                    else if (currentPosteDate) { newPostes[currentPosteDate].push(act); }
                 });
-                localStorage.setItem('monChrono_data_csv', JSON.stringify(postes));
+
+                // FUSION : On écrase seulement si la date existe déjà, sinon on ajoute
+                const mergedData = { ...existingPostes, ...newPostes };
+                localStorage.setItem('monChrono_data_csv', JSON.stringify(mergedData));
+                
+                // Sauter au mois du dernier fichier importé
+                const lastDate = Object.keys(newPostes).pop();
+                if(lastDate) {
+                    const [ld, lm, ly] = lastDate.split('/').map(Number);
+                    curM = lm - 1; curY = ly;
+                }
+
                 initApp();
                 navTo('dashboard');
+                alert("Données ajoutées avec succès !");
             };
             reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if(confirm("Attention : cela va supprimer toutes tes activités et congés enregistrés. Continuer ?")) {
+                localStorage.removeItem('monChrono_data_csv');
+                localStorage.removeItem('monChrono_conges');
+                listeConges = [];
+                initApp();
+                alert("Mémoire vidée.");
+            }
         }
 
         function toggleConge(dateStr) {
@@ -260,7 +290,6 @@
                 }
             }
 
-            // LOGIQUE PAIE
             Object.keys(dataCSV).forEach(dateStr => {
                 const [d, m, y] = dateStr.split('/').map(Number);
                 const dateDepart = new Date(y, m-1, d);
@@ -279,7 +308,9 @@
                         const hDep = parseInt(poste[0].heure.split(':')[0]);
                         let dateComptable = new Date(dateDepart);
                         if (hDep >= 18) dateComptable.setDate(dateDepart.getDate() + 1);
-                        if (dateComptable >= new Date(curY, curM, 15) && dateComptable <= new Date(curY, curM+1, 14)) {
+                        const startPaie = new Date(curY, curM, 15);
+                        const endPaie = new Date(curY, curM+1, 14);
+                        if (dateComptable >= startPaie && dateComptable <= endPaie) {
                             sumFraisPaie += tarifs.repas;
                             fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">Départ ${dateStr}</p><p class="text-xs font-bold text-white italic">Repas Nuit (Bascule)</p></div><p class="text-xl font-black text-white">${tarifs.repas}€</p></div>`;
                         }
