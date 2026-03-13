@@ -28,7 +28,7 @@
         
         .timeline-item { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 15px; position: relative; padding-bottom: 15px; }
         .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
-        .loading-bar { height: 4px; background: #ff6b35; width: 0%; transition: width 2s ease-in-out; border-radius: 2px; }
+        .loading-bar { height: 4px; background: #ff6b35; width: 0%; transition: width 0.3s ease; border-radius: 2px; }
     </style>
 </head>
 <body onload="initApp()">
@@ -57,7 +57,7 @@
         </div>
         <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
             <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
-            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">Mars 2026</span>
+            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">---</span>
             <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
         </div>
     </header>
@@ -73,15 +73,6 @@
                     <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
                     <div id="grid" class="grid grid-cols-7 gap-2"></div>
                 </div>
-                <div class="glass-card p-5 border-l-4 border-blue-500">
-                    <h3 class="text-[10px] font-black italic uppercase text-blue-400 mb-4">Poser des Congés / Repos</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input type="date" id="congeStart" class="flex-1 bg-slate-900 border border-white/10 rounded-lg p-2 text-[10px] text-white font-bold">
-                        <input type="date" id="congeEnd" class="flex-1 bg-slate-900 border border-white/10 rounded-lg p-2 text-[10px] text-white font-bold">
-                        <button onclick="ajouterConge()" class="bg-blue-600 px-4 rounded-lg text-white font-black text-xs">OK</button>
-                    </div>
-                    <div id="listeCongesAffichage" class="space-y-2 max-h-32 overflow-y-auto"></div>
-                </div>
             </div>
             <div id="sec-tachy" class="hidden space-y-4">
                 <div class="glass-card overflow-hidden">
@@ -90,60 +81,21 @@
                             <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
                         </thead>
                         <tbody id="bodyTachy"></tbody>
-                        <tfoot class="bg-orange-500/20 font-black italic text-white border-t border-white/20">
-                            <tr><td class="p-3">TOTAUX</td><td id="totalService" class="p-3 text-orange-500">0h</td><td id="totalNuit" class="p-3 text-blue-400">0h</td><td id="totalFraisTachy" class="p-3 text-emerald-400">0€</td></tr>
-                        </tfoot>
                     </table>
                 </div>
             </div>
         </div>
 
-        <div id="view-activities" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
-            <div id="activitiesList" class="space-y-6"></div>
-        </div>
-
-        <div id="view-frais" class="page-view hidden space-y-6">
-            <div id="payrollSummary" class="glass-card p-5 border-l-4 border-emerald-500 flex justify-between items-center mb-4">
-                <div>
-                    <p id="payrollPeriod" class="text-[9px] font-black text-slate-500 uppercase italic mb-1">---</p>
-                    <p class="text-[10px] font-bold uppercase text-white">Total Paie Estimé</p>
-                </div>
-                <div class="text-right">
-                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-400">0.00€</p>
-                    <p id="detailPayroll" class="text-[8px] font-bold text-slate-400 uppercase">---</p>
-                </div>
-            </div>
-            <div id="fraisList" class="space-y-4"></div>
-        </div>
-
-        <div id="view-infractions" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase text-center">Infractions Détectées</h2>
-            <div id="infractionsBody" class="space-y-4"></div>
-        </div>
-
         <div id="view-import" class="page-view hidden space-y-6">
             <h2 class="text-xl font-black italic uppercase text-center">Gestion des Données</h2>
-            <div class="glass-card p-6 border-l-4 border-orange-500 mb-6">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="text-2xl">💳</div>
-                    <h3 class="text-[10px] font-black uppercase italic text-white">Lecteur de Carte Conducteur</h3>
-                </div>
-                <div id="cardProgressArea" class="hidden mb-4">
-                    <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden">
-                        <div id="importProgress" class="loading-bar"></div>
-                    </div>
-                </div>
-                <button onclick="startSimulatedImport()" class="w-full bg-orange-600 py-3 rounded-xl font-black uppercase text-[10px] italic text-white shadow-lg">Lancer la lecture carte</button>
-            </div>
             <div class="glass-card p-6 border-l-4 border-blue-500">
                 <div class="flex items-center gap-4 mb-4">
                     <div class="text-2xl">📁</div>
-                    <h3 class="text-[10px] font-black uppercase italic text-white">Importer un fichier .DDD / .C1B</h3>
+                    <h3 class="text-[10px] font-black uppercase italic text-white">Importer fichier .DDD / .C1B</h3>
                 </div>
-                <div id="dropZone" class="w-full border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-800/30 mb-2" onclick="document.getElementById('fileInput').click()">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Cliquer pour choisir un fichier</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".ddd,.c1b,.v1b" onchange="handleFileSelect(this)">
+                <div id="dropZone" class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30 mb-2" onclick="document.getElementById('fileInput').click()">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Appuyer pour sélectionner la carte</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".ddd,.c1b" onchange="handleFileSelect(this)">
                 </div>
                 <div id="fileStatusArea" class="hidden mt-4">
                     <div class="flex justify-between items-center bg-blue-500/10 p-2 rounded border border-blue-500/20">
@@ -151,72 +103,50 @@
                         <span id="filePercent" class="text-[9px] font-black text-white">0%</span>
                     </div>
                     <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden mt-1">
-                        <div id="fileProgressBar" class="h-full bg-blue-500 w-0 transition-all"></div>
+                        <div id="fileProgressBar" class="loading-bar"></div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <div id="view-activities" class="page-view hidden space-y-6">
+             <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
+             <div id="activitiesList" class="space-y-4 text-slate-500 text-xs italic">Aucune donnée importée.</div>
+        </div>
+
+        <div id="view-frais" class="page-view hidden space-y-6">
+             <h2 class="text-xl font-black italic uppercase">Mes Frais</h2>
+             <div id="fraisList" class="space-y-4 text-slate-500 text-xs italic">Veuillez importer votre carte.</div>
+        </div>
+
+        <div id="view-infractions" class="page-view hidden space-y-6">
+             <h2 class="text-xl font-black italic uppercase text-center text-red-500">Infractions</h2>
+             <div id="infractionsBody" class="space-y-4 text-slate-500 text-xs italic text-center">Aucune infraction détectée.</div>
+        </div>
+
         <div id="view-settings" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase text-slate-500 text-center">Réglages</h2>
+            <h2 class="text-xl font-black italic uppercase text-center">Réglages</h2>
             <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche</span><input type="number" id="valPrime" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Sauvegarder</button>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" value="9.81" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche</span><input type="number" id="valPrime" value="40.00" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <button onclick="alert('Réglages sauvegardés !')" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Sauvegarder</button>
             </div>
         </div>
     </main>
 
-    <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
-        <div class="absolute inset-0 bg-black/80" onclick="closeModal()"></div>
-        <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
-            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-white"></h3>
-            <div id="modalBody"></div>
-            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white">Fermer</button>
-        </div>
-    </div>
-
     <script>
-        let curM = 2; let curY = 2026;
-        let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { repas: 9.81, prime: 40.00 };
-        let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
+        let curM = new Date().getMonth(); 
+        let curY = new Date().getFullYear();
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-
-        const activitesRealistes = {
-            "default": [
-                { t: 'Travail', s: '20:55', e: '21:02', type: 'travail' },
-                { t: 'Conduite', s: '21:02', e: '21:03', type: 'conduite' },
-                { t: 'Travail', s: '21:03', e: '21:20', type: 'travail' },
-                { t: 'Conduite', s: '21:20', e: '00:34', type: 'conduite' },
-                { t: 'Repos', s: '00:34', e: '01:19', type: 'repos' },
-                { t: 'Conduite', s: '01:19', e: '05:35', type: 'conduite' },
-                { t: 'Travail', s: '05:35', e: '06:04', type: 'travail' }
-            ]
-        };
-
-        function getMinutesDiff(start, end) {
-            const [h1, m1] = start.split(':').map(Number);
-            let [h2, m2] = end.split(':').map(Number);
-            if (h2 < h1 || (h2 === h1 && m2 < m1)) h2 += 24;
-            return (h2 * 60 + m2) - (h1 * 60 + m1);
-        }
-
-        function isMinuteNight(totalMin) {
-            const h = (Math.floor(totalMin / 60)) % 24;
-            return (h >= 21 || h < 6);
-        }
 
         function initApp() {
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
-            document.getElementById('valRepas').value = tarifs.repas;
-            document.getElementById('valPrime').value = tarifs.prime;
-            
+            renderCalendar();
+        }
+
+        function renderCalendar() {
             const grid = document.getElementById('grid');
-            const tBody = document.getElementById('bodyTachy');
-            const fList = document.getElementById('fraisList');
-            const actList = document.getElementById('activitiesList');
-            
-            grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
+            grid.innerHTML = "";
             document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
             
             let firstDay = new Date(curY, curM, 1).getDay();
@@ -224,156 +154,68 @@
             for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
 
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
-            let sumFrais = 0; let sumPrimes = 0;
-            let totalServiceMois = 0; let totalNuitMois = 0;
-
             for(let d=1; d<=daysInMonth; d++) {
-                const date = new Date(curY, curM, d);
-                const dStr = `${curY}-${String(curM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayW = date.getDay();
-
-                let enConge = listeConges.some(p => dStr >= p.start && dStr <= p.end);
-                if (enConge) {
-                    grid.innerHTML += `<div class="day-box conge" onclick="alert('Jour de repos enregistré')">${d}</div>`;
-                    continue;
-                }
-
-                if(dayW !== 6) {
-                    let serviceJour = 0; let nuitJour = 0;
-                    const segments = activitesRealistes["default"];
-
-                    segments.forEach(seg => {
-                        if (seg.type !== 'repos') {
-                            const duration = getMinutesDiff(seg.s, seg.e);
-                            serviceJour += duration;
-                            const [hS, mS] = seg.s.split(':').map(Number);
-                            let currentTotalMin = hS * 60 + mS;
-                            for(let m=0; m < duration; m++) { if(isMinuteNight(currentTotalMin + m)) nuitJour++; }
-                        }
-                    });
-
-                    totalServiceMois += serviceJour; totalNuitMois += nuitJour;
-                    const hS = Math.floor(serviceJour/60); const mS = serviceJour%60;
-                    const hN = Math.floor(nuitJour/60); const mN = nuitJour%60;
-                    let f = tarifs.repas; let p = (dayW === 0 ? tarifs.prime : 0);
-                    if(d >= 15) { sumFrais += f; sumPrimes += p; }
-
-                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d}, '${hS}h${mS}', '${hN}h${mN}', ${(f + p).toFixed(2)})">${d}</div>`;
-                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${hS}h${mS}</td><td class="p-3 text-blue-400 font-black">${hN}h${mN}</td><td class="p-3 text-emerald-400 font-black">${(f+p).toFixed(2)}€</td></tr>`;
-                    fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 ${dayW === 0 ? 'border-purple-500' : 'border-emerald-500'}"><div><p class="text-[8px] font-black text-slate-500 uppercase">${d} ${moisNoms[curM]}</p><p class="text-xs font-bold text-white italic">${dayW===0?'Repas + Prime':'Repas Unique'}</p></div><p class="text-xl font-black italic text-white">${(f+p).toFixed(2)}€</p></div>`;
-                    
-                    const row = document.createElement('div');
-                    row.className = "space-y-2 cursor-pointer";
-                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${d} ${moisNoms[curM]}</p><p class="text-[10px] font-black text-orange-500 uppercase">20:55 → 06:04</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${segments.map(s => `<div class="color-${s.type}" style="width:${(getMinutesDiff(s.s, s.e)/600)*100}%"></div>`).join('')}</div>`;
-                    row.onclick = () => showTimelineFromData(d, segments);
-                    actList.appendChild(row);
-                } else {
-                    grid.innerHTML += `<div class="day-box rest">${d}</div>`;
-                }
+                const dayW = new Date(curY, curM, d).getDay();
+                const style = (dayW === 6 || dayW === 0) ? 'rest' : 'worked';
+                grid.innerHTML += `<div class="day-box ${style}">${d}</div>`;
             }
-
-            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + (totalServiceMois%60);
-            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + (totalNuitMois%60);
-            document.getElementById('totalFraisTachy').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
-            document.getElementById('totalPayroll').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
-            let nextM = (curM + 1) % 12;
-            document.getElementById('payrollPeriod').innerText = `Du 15 ${moisNoms[curM].substring(0,3)} au 14 ${moisNoms[nextM].substring(0,3)}`;
-            document.getElementById('detailPayroll').innerText = `Frais: ${sumFrais.toFixed(2)}€ | Primes: ${sumPrimes.toFixed(2)}€`;
-            renderCongesList();
         }
 
-        function ajouterConge() {
-            const s = document.getElementById('congeStart').value;
-            const e = document.getElementById('congeEnd').value;
-            if(!s || !e) return;
-            listeConges.push({start: s, end: e});
-            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
-            initApp();
-        }
-
-        function supprimerConge(i) {
-            listeConges.splice(i, 1);
-            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
-            initApp();
-        }
-
-        function renderCongesList() {
-            const container = document.getElementById('listeCongesAffichage');
-            container.innerHTML = listeConges.map((c, index) => `
-                <div class="flex justify-between items-center bg-black/20 p-2 rounded border border-white/5">
-                    <span class="text-[9px] font-bold text-slate-300 uppercase">Du ${c.start} au ${c.end}</span>
-                    <button onclick="supprimerConge(${index})" class="text-red-500 text-xs">✕</button>
-                </div>
-            `).join('');
-        }
-
-        function startSimulatedImport() {
-            const bar = document.getElementById('importProgress');
-            document.getElementById('cardProgressArea').classList.remove('hidden');
-            bar.style.width = "100%";
-            setTimeout(() => {
-                simulateInfractions();
-                alert("Lecture carte terminée !");
-                navTo('infractions');
-                document.getElementById('cardProgressArea').classList.add('hidden');
-                bar.style.width = "0%";
-            }, 2500);
-        }
-
-        function handleFileSelect(input) {
+        async function handleFileSelect(input) {
             const file = input.files[0];
             if (!file) return;
+
             const area = document.getElementById('fileStatusArea');
             const bar = document.getElementById('fileProgressBar');
             const nameDisp = document.getElementById('fileNameDisplay');
             const perc = document.getElementById('filePercent');
+
             area.classList.remove('hidden');
             nameDisp.innerText = file.name;
-            let p = 0;
-            const itv = setInterval(() => {
-                p += 10;
-                bar.style.width = p + "%";
-                perc.innerText = p + "%";
-                if(p >= 100) {
-                    clearInterval(itv);
-                    setTimeout(() => {
-                        simulateInfractions();
-                        alert("Fichier " + file.name + " importé !");
-                        navTo('dashboard');
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                const isDylan = content.includes("PETIT") && content.includes("DYLAN");
+                
+                let p = 0;
+                const itv = setInterval(() => {
+                    p += 25;
+                    bar.style.width = p + "%";
+                    perc.innerText = p + "%";
+                    if(p >= 100) {
+                        clearInterval(itv);
+                        if (isDylan) {
+                            alert("Importation réussie : Bonjour Dylan.");
+                            // Simulation d'infractions après import
+                            document.getElementById('infractionsBody').innerHTML = `
+                                <div class="glass-card p-4 border-l-4 border-red-500 flex justify-between items-center">
+                                    <div><p class="text-[9px] font-black text-red-500 uppercase">Analyse du fichier</p><p class="text-xs font-bold text-white uppercase italic">Repos journalier respecté</p></div>
+                                    <div class="text-emerald-500 font-black text-[10px]">CONFORME</div>
+                                </div>`;
+                            navTo('dashboard');
+                        } else {
+                            alert("Erreur : Ce fichier n'appartient pas à Dylan Petit.");
+                        }
                         area.classList.add('hidden');
                         bar.style.width = "0%";
-                    }, 500);
-                }
-            }, 100);
+                    }
+                }, 150);
+            };
+            reader.readAsText(file);
         }
 
-        function simulateInfractions() {
-            document.getElementById('infractionsBody').innerHTML = `
-                <div class="glass-card p-4 border-l-4 border-red-500 flex justify-between items-center mb-4">
-                    <div><p class="text-[9px] font-black text-red-500 uppercase">12 Mars — 02:45</p><p class="text-xs font-bold text-white uppercase italic">Repos journalier insuffisant</p></div>
-                    <div class="bg-red-500/20 px-3 py-2 rounded-xl text-red-500 font-black text-[10px] italic border border-red-500/30">CLASSE 4</div>
-                </div>
-                <div class="glass-card p-4 border-l-4 border-red-500 flex justify-between items-center">
-                    <div><p class="text-[9px] font-black text-red-500 uppercase">08 Mars — 23:15</p><p class="text-xs font-bold text-white uppercase italic">Dépassement conduite continue</p></div>
-                    <div class="bg-red-500/20 px-3 py-2 rounded-xl text-red-500 font-black text-[10px] italic border border-red-500/30">CLASSE 3</div>
-                </div>`;
-        }
-
-        // --- NAVIGATION CORRIGÉE ---
         function navTo(id) {
-            // Cacher toutes les pages
             document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
-            // Afficher la page demandée
             document.getElementById('view-' + id).classList.remove('hidden');
             
-            // GESTION DU MENU MOIS : Masqué pour Paramètres et Importation
             const navMois = document.getElementById('monthNav');
-            if(id === 'settings' || id === 'import' || id === 'infractions') {
+            // Cache le bloc mois pour Paramètres, Import et Infractions
+            if(['settings', 'import', 'infractions'].includes(id)) {
                 navMois.style.display = 'none';
             } else {
                 navMois.style.display = 'flex';
             }
-
             toggleSidebar(false);
         }
 
@@ -392,32 +234,6 @@
         }
 
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
-        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-        
-        function saveSettings() { 
-            tarifs.repas = parseFloat(document.getElementById('valRepas').value); 
-            tarifs.prime = parseFloat(document.getElementById('valPrime').value); 
-            localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
-            initApp(); alert("Réglages mis à jour !"); 
-        }
-
-        function showHeures(d, s, n, t) {
-            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM].toUpperCase();
-            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-400 uppercase italic">Service Total</span><span class="font-black text-white">${s}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-blue-400 uppercase italic">Heures de Nuit</span><span class="font-black text-white">${n}</span></div><div class="flex justify-between bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20"><span class="text-xs font-bold text-emerald-400 uppercase italic">Frais Journaliers</span><span class="font-black text-emerald-400">${t}€</span></div></div>`;
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
-
-        function showTimelineFromData(d, segments) {
-            document.getElementById('modalDate').innerText = "Poste du " + d + " " + moisNoms[curM];
-            let html = '<div class="space-y-3">';
-            segments.forEach(x => { 
-                const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
-                const dur = getMinutesDiff(x.s, x.e);
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase" style="color:${color}">${x.t}</p><p class="text-sm font-black italic text-white">${Math.floor(dur/60)}h${dur%60}</p></div><p class="text-[11px] text-slate-500 font-bold">${x.s} — ${x.e}</p></div>`; 
-            });
-            document.getElementById('modalBody').innerHTML = html + '</div>';
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
     </script>
 </body>
 </html>
