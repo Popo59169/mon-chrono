@@ -312,4 +312,305 @@
             {d:15,dep:'20:35',arr:'16/01 06:42',pause:57},
             {d:18,dep:'21:43',arr:'19/01 07:21',pause:47},
             {d:19,dep:'20:32',arr:'20/01 07:16',pause:57},
-            {d:20,dep:'20:41',arr:
+            {d:20,dep:'20:41',arr:'21/01 06:52',pause:48},
+            {d:21,dep:'20:43',arr:'22/01 07:44',pause:48},
+            {d:22,dep:'20:36',arr:'23/01 06:54',pause:57},
+            {d:25,dep:'21:40',arr:'26/01 08:02',pause:46},
+            {d:26,dep:'20:45',arr:'27/01 08:26',pause:47},
+            {d:27,dep:'20:39',arr:'28/01 07:28',pause:49},
+            {d:28,dep:'20:40',arr:'29/01 08:10',pause:49},
+            {d:29,dep:'20:40',arr:'30/01 06:33',pause:49},
+          ],
+          '2026-1': [ // Février
+            {d:1,dep:'21:46',arr:'02/02 07:51',pause:46},
+            {d:2,dep:'20:45',arr:'03/02 07:30',pause:47},
+            {d:3,dep:'20:23',arr:'04/02 06:12',pause:45},
+            {d:4,dep:'20:17',arr:'05/02 07:00',pause:47},
+            {d:5,dep:'20:44',arr:'06/02 06:07',pause:45},
+            {d:8,dep:'21:44',arr:'09/02 07:04',pause:46},
+            {d:9,dep:'20:45',arr:'10/02 07:51',pause:47},
+            {d:10,dep:'20:35',arr:'11/02 07:18',pause:55},
+            {d:11,dep:'20:44',arr:'12/02 08:28',pause:46},
+            {d:12,dep:'20:35',arr:'13/02 06:30',pause:52},
+            {d:15,dep:'21:40',arr:'16/02 06:48',pause:46},
+            {d:16,dep:'20:38',arr:'17/02 07:25',pause:53},
+            {d:17,dep:'20:41',arr:'18/02 06:30',pause:47},
+            {d:18,dep:'20:44',arr:'19/02 10:17',pause:194},
+          ],
+        };
+
+        // ── FONCTIONS DE CALCUL ──────────────────────────────────────
+        function parseToMin(hStr) {
+            const [h, m] = hStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function totalServiceMin(dep, arr, pause) {
+            const depMin = parseToMin(dep);
+            let arrTime = arr.includes(' ') ? arr.split(' ')[1] : arr;
+            let arrMin = parseToMin(arrTime);
+            if (arrMin <= depMin) arrMin += 24 * 60;
+            return (arrMin - depMin) - pause;
+        }
+
+        function nightMin(dep, arr, pause) {
+            const depMin = parseToMin(dep);
+            let arrTime = arr.includes(' ') ? arr.split(' ')[1] : arr;
+            let arrMin = parseToMin(arrTime);
+            if (arrMin <= depMin) arrMin += 24 * 60;
+            // Plages nuit : 21h→24h et 0h→6h (J+1)
+            const ranges = [[1260, 1440], [1440, 1800]];
+            let total = 0;
+            for (const [ns, ne] of ranges) {
+                const s = Math.max(depMin, ns);
+                const e = Math.min(arrMin, ne);
+                if (e > s) total += e - s;
+            }
+            return Math.max(0, total - pause);
+        }
+
+        function fmtH(mins) {
+            const h = Math.floor(mins / 60);
+            const m = mins % 60;
+            return h + 'h' + String(m).padStart(2, '0');
+        }
+
+        function getTripKey(y, m) { return y + '-' + m; }
+
+        let curM = 2; let curY = 2026;
+        let tarifs = { repas: 9.81, prime: 40.00 };
+        const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+        function initApp() {
+            document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
+            const grid = document.getElementById('grid');
+            const tBody = document.getElementById('bodyTachy');
+            const fList = document.getElementById('fraisList');
+            const actList = document.getElementById('activitiesList');
+            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
+            
+            grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
+            let firstDay = new Date(curY, curM, 1).getDay();
+            let shift = (firstDay === 0) ? 6 : firstDay - 1;
+            for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
+
+            const days = new Date(curY, curM + 1, 0).getDate();
+            let sumFrais = 0; let sumPrimes = 0;
+            let sumServiceMin = 0; let sumNuitMin = 0;
+
+            for(let d=1; d<=days; d++) {
+                const date = new Date(curY, curM, d);
+                const dayW = date.getDay();
+                let aTrav = (dayW !== 6); 
+                let fraisJ = aTrav ? tarifs.repas : 0;
+                let primeJ = (dayW === 0) ? tarifs.prime : 0;
+
+                grid.innerHTML += `<div class="day-box ${!aTrav ? 'rest' : 'worked'}" onclick="showHeures(${d}, ${(fraisJ + primeJ).toFixed(2)})">${d}</div>`;
+
+                const key = getTripKey(curY, curM);
+                const trip = (TRIPS[key] || []).find(t => t.d === d);
+                if(aTrav) {
+                    let sMin = 0, nMin = 0, depStr = '—', arrStr = '—';
+                    if (trip) {
+                        sMin = totalServiceMin(trip.dep, trip.arr, trip.pause);
+                        nMin = nightMin(trip.dep, trip.arr, trip.pause);
+                        depStr = trip.dep;
+                        arrStr = trip.arr.includes(' ') ? trip.arr.split(' ')[1] : trip.arr;
+                    }
+                    sumServiceMin += sMin; sumNuitMin += nMin;
+                    const sStr = sMin > 0 ? fmtH(sMin) : '—';
+                    const nStr = nMin > 0 ? fmtH(nMin) : '—';
+                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${sStr}</td><td class="p-3 text-blue-400 font-black">${nStr}</td><td class="p-3 text-emerald-400 font-black">${(fraisJ+primeJ).toFixed(2)}€</td></tr>`;
+                    fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 ${dayW === 0 ? 'border-purple-500' : 'border-emerald-500'}"><div><p class="text-[8px] font-black text-slate-500 uppercase">${d} ${moisNoms[curM]}</p><p class="text-xs font-bold text-white italic">${dayW === 0 ? 'Repas + Prime' : 'Repas Unique'}</p></div><p class="text-xl font-black italic text-white">${(fraisJ+primeJ).toFixed(2)}€</p></div>`;
+                    
+                    const row = document.createElement('div');
+                    row.className = "space-y-2 cursor-pointer";
+                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${d} ${moisNoms[curM]}</p><p class="text-[10px] font-black text-orange-500 uppercase">20:00 → 06:45</p></div>
+                        <div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5"><div class="color-travail" style="width:20%"></div><div class="color-conduite" style="width:40%"></div><div class="color-repos" style="width:10%"></div><div class="color-conduite" style="width:30%"></div></div>`;
+                    row.onclick = () => showTimeline(d);
+                    actList.appendChild(row);
+                    if(d >= 15) { sumFrais += fraisJ; sumPrimes += primeJ; }
+                }
+            }
+
+            document.getElementById('totalService').innerText = fmtH(sumServiceMin);
+            document.getElementById('totalNuit').innerText = fmtH(sumNuitMin);
+            document.getElementById('totalFraisTachy').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
+            let nM = (curM + 1) % 12;
+            document.getElementById('payrollPeriod').innerText = `Du 15 ${moisNoms[curM].substring(0,3)} au 14 ${moisNoms[nM].substring(0,3)}`;
+            document.getElementById('totalPayroll').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
+            document.getElementById('detailPayroll').innerText = `Frais: ${sumFrais.toFixed(2)}€ | Primes: ${sumPrimes.toFixed(2)}€`;
+        }
+
+        // ── IMPORT .DDD VIA CLAUDE API ────────────────────────────────
+        let pendingImportData = null;
+
+        async function handleDDD(file) {
+            if (!file) return;
+            document.getElementById('importBox').classList.remove('hidden');
+            document.getElementById('importResult').classList.add('hidden');
+            document.getElementById('importError').classList.add('hidden');
+            setProgress(10, 'Lecture du fichier…', file.name);
+
+            // Read as base64
+            const base64 = await new Promise((res, rej) => {
+                const r = new FileReader();
+                r.onload = () => res(r.result.split(',')[1]);
+                r.onerror = () => rej(new Error('Lecture échouée'));
+                r.readAsDataURL(file);
+            });
+
+            setProgress(30, 'Envoi à Claude pour analyse…', 'Analyse du fichier tachygraphe');
+
+            const prompt = `Tu es un expert en analyse de fichiers tachygraphes numériques (.DDD).
+Analyse ce fichier binaire de carte conducteur et extrais TOUTES les activités.
+
+Pour chaque trajet/service, extrais :
+- Date (DD/MM/YYYY)
+- Heure début de service
+- Heure fin de service  
+- Durée conduite (HH:MM)
+- Durée autres travaux (HH:MM)
+- Durée pauses/repos (HH:MM)
+- Kilomètres parcourus
+
+Regroupe par mois. Réponds UNIQUEMENT en JSON valide :
+{
+  "conducteur": "Nom Prénom",
+  "carte": "numéro carte",
+  "mois": [
+    {
+      "annee": 2026,
+      "mois": 3,
+      "trajets": [
+        {
+          "jour": 1,
+          "dep": "20:30",
+          "arr": "07:15",
+          "conduite": "07:45",
+          "travaux": "01:30",
+          "pause": 45,
+          "km": 610
+        }
+      ]
+    }
+  ]
+}
+Mois de 1 à 12. pause en minutes. Ne mets rien avant ou après le JSON.`;
+
+            try {
+                setProgress(50, 'Claude analyse le fichier…', 'Extraction des données en cours');
+                const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 8000,
+                        messages: [{
+                            role: 'user',
+                            content: [
+                                { type: 'text', text: 'Voici le fichier tachygraphe .DDD à analyser :' },
+                                { type: 'document', source: { type: 'base64', media_type: 'application/octet-stream', data: base64 } },
+                                { type: 'text', text: prompt }
+                            ]
+                        }]
+                    })
+                });
+
+                if (!resp.ok) throw new Error('Erreur API : ' + resp.status);
+                setProgress(80, 'Traitement des résultats…', '');
+
+                const apiData = await resp.json();
+                const raw = apiData.content.map(c => c.text || '').join('');
+                const clean = raw.replace(/```json|```/g, '').trim();
+                const parsed = JSON.parse(clean);
+
+                setProgress(100, 'Terminé !', '');
+                document.getElementById('importSpinner').classList.add('hidden');
+                pendingImportData = parsed;
+                showImportResult(parsed);
+
+            } catch(err) {
+                document.getElementById('importBox').classList.add('hidden');
+                document.getElementById('importError').classList.remove('hidden');
+                document.getElementById('importErrorMsg').innerText = err.message;
+            }
+        }
+
+        function setProgress(pct, status, detail) {
+            document.getElementById('importBar').style.width = pct + '%';
+            document.getElementById('importStatus').innerText = status;
+            document.getElementById('importDetail').innerText = detail;
+        }
+
+        function showImportResult(parsed) {
+            document.getElementById('importResult').classList.remove('hidden');
+            const moisNomsCourt = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+            let html = `<div class="font-bold text-white">${parsed.conducteur || '—'} — Carte ${parsed.carte || '—'}</div>`;
+            let totalTrajets = 0;
+            for (const mo of (parsed.mois || [])) {
+                const n = (mo.trajets || []).length;
+                totalTrajets += n;
+                html += `<div>📅 <b>${moisNomsCourt[(mo.mois||1)-1]} ${mo.annee}</b> — ${n} trajets</div>`;
+            }
+            html += `<div class="text-emerald-400 font-bold mt-1">Total : ${totalTrajets} trajets</div>`;
+            document.getElementById('importSummary').innerHTML = html;
+        }
+
+        function applyImport() {
+            if (!pendingImportData) return;
+            for (const mo of (pendingImportData.mois || [])) {
+                const yr = mo.annee;
+                const m = (mo.mois || 1) - 1;
+                const key = yr + '-' + m;
+                if (!TRIPS[key]) TRIPS[key] = [];
+                for (const tr of (mo.trajets || [])) {
+                    // Remove existing entry for same day
+                    const idx = TRIPS[key].findIndex(t => t.d === tr.jour);
+                    if (idx >= 0) TRIPS[key].splice(idx, 1);
+                    TRIPS[key].push({ d: tr.jour, dep: tr.dep, arr: tr.arr, pause: tr.pause || 45 });
+                }
+            }
+            initApp();
+            navTo('dashboard');
+            alert('✓ ' + pendingImportData.mois.length + ' mois importés avec succès !');
+        }
+
+        function showHeures(d, t) {
+            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM].toUpperCase();
+            const mKey = getTripKey(curY, curM);
+            const mTrip = (TRIPS[mKey] || []).find(tr => tr.d === d);
+            let mSvc = '—', mNuit = '—', mDep = '—', mArr = '—';
+            if (mTrip) {
+                mSvc = fmtH(totalServiceMin(mTrip.dep, mTrip.arr, mTrip.pause));
+                mNuit = fmtH(nightMin(mTrip.dep, mTrip.arr, mTrip.pause));
+                mDep = mTrip.dep;
+                mArr = mTrip.arr.includes(' ') ? mTrip.arr.split(' ')[1] : mTrip.arr;
+            }
+            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-500 uppercase">Départ</span><span class="font-black text-white">${mDep}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-500 uppercase">Fin service</span><span class="font-black text-white">${mArr}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-400 uppercase">Service (- pause)</span><span class="font-black text-white">${mSvc}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-blue-400 uppercase">Nuit 21h-6h (- pause)</span><span class="font-black text-blue-300">${mNuit}</span></div><div class="flex justify-between bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20"><span class="text-xs font-bold text-emerald-400 uppercase">Frais Jour</span><span class="font-black text-emerald-400">${t}€</span></div></div>`;
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function showTimeline(d) {
+            document.getElementById('modalDate').innerText = "Poste du " + d + " " + moisNoms[curM];
+            const data = [ { t: 'Travail', s: '20:00', e: '20:45', d: '0h45', c: '#eab308' }, { t: 'Conduite', s: '20:45', e: '23:30', d: '2h45', c: '#22c55e' }, { t: 'Repos', s: '23:30', e: '00:15', d: '0h45', c: '#ef4444' }, { t: 'Conduite', s: '00:15', e: '04:00', d: '3h45', c: '#22c55e' } ];
+            let html = '<div class="space-y-3">';
+            data.forEach(x => { html += `<div class="timeline-item"><div class="timeline-dot" style="background:${x.c}"></div><div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase" style="color:${x.c}">${x.t}</p><p class="text-sm font-black italic text-white">${x.d}</p></div><p class="text-[11px] text-slate-500 font-bold">${x.s} — ${x.e}</p></div>`; });
+            document.getElementById('modalBody').innerHTML = html + '</div>';
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function navTo(id) {
+            document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
+            document.getElementById('view-' + id).classList.remove('hidden');
+            toggleSidebar(false);
+        }
+
+        function toggleSidebar(f) { const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; } s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; }
+        function setTab(t) { document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); }
+        function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
+        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
+        function saveSettings() { tarifs.repas = parseFloat(document.getElementById('valRepas').value); tarifs.prime = parseFloat(document.getElementById('valPrime').value); initApp(); alert("Réglages sauvegardés !"); }
+    </script>
+</body>
+</html>
