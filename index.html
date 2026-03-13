@@ -11,14 +11,24 @@
         .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
+        .conge { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; color: white !important; }
+        .conge::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: white; border-radius: 50%; }
         .empty { visibility: hidden; }
         .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #ff6b35; padding-bottom: 8px; font-style: italic; }
+        
+        .color-conduite { background: #22c55e; height: 100%; }
+        .color-travail { background: #eab308; height: 100%; }
+        .color-repos { background: #ef4444; height: 100%; }
+
         .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
         .sidebar.open { transform: translateX(0); }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
         .tab-active { background: #ff6b35 !important; color: white !important; }
         .hidden { display: none !important; }
-        .loading-bar { height: 4px; background: #ff6b35; width: 0%; transition: width 0.3s ease; border-radius: 2px; }
+        
+        .timeline-item { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 15px; position: relative; padding-bottom: 15px; }
+        .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
+        .loading-bar { height: 4px; background: #ff6b35; width: 0%; transition: width 2s ease-in-out; border-radius: 2px; }
     </style>
 </head>
 <body onload="initApp()">
@@ -47,67 +57,232 @@
         </div>
         <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
             <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
-            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">---</span>
+            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">Mars 2026</span>
             <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
         </div>
     </header>
 
     <main class="px-6 pb-10">
         <div id="view-dashboard" class="page-view space-y-6">
+            <div class="flex gap-2">
+                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
+                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tachygraphe</button>
+            </div>
             <div id="sec-cal" class="space-y-4">
                 <div class="glass-card p-5">
                     <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
                     <div id="grid" class="grid grid-cols-7 gap-2"></div>
                 </div>
-            </div>
-        </div>
-
-        <div id="view-import" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase text-center">Gestion des Données</h2>
-            <div class="glass-card p-6 border-l-4 border-blue-500">
-                <div id="dropZone" class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30" onclick="document.getElementById('fileInput').click()">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Appuyer pour sélectionner la carte (.DDD)</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".ddd,.c1b" onchange="handleFileSelect(this)">
-                </div>
-                <div id="fileStatusArea" class="hidden mt-4">
-                    <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden mt-1">
-                        <div id="fileProgressBar" class="loading-bar"></div>
+                <div class="glass-card p-5 border-l-4 border-blue-500">
+                    <h3 class="text-[10px] font-black italic uppercase text-blue-400 mb-4">Poser des Congés / Repos</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="date" id="congeStart" class="flex-1 bg-slate-900 border border-white/10 rounded-lg p-2 text-[10px] text-white font-bold">
+                        <input type="date" id="congeEnd" class="flex-1 bg-slate-900 border border-white/10 rounded-lg p-2 text-[10px] text-white font-bold">
+                        <button onclick="ajouterConge()" class="bg-blue-600 px-4 rounded-lg text-white font-black text-xs">OK</button>
                     </div>
+                    <div id="listeCongesAffichage" class="space-y-2 max-h-32 overflow-y-auto"></div>
                 </div>
-                <button onclick="clearData()" class="w-full mt-4 text-[9px] font-bold text-red-500 uppercase">Effacer les données enregistrées</button>
+            </div>
+            <div id="sec-tachy" class="hidden space-y-4">
+                <div class="glass-card overflow-hidden">
+                    <table class="w-full text-[10px] text-left border-collapse">
+                        <thead class="bg-white/10 text-orange-500 font-black uppercase italic">
+                            <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
+                        </thead>
+                        <tbody id="bodyTachy"></tbody>
+                        <tfoot class="bg-orange-500/20 font-black italic text-white border-t border-white/20">
+                            <tr><td class="p-3">TOTAUX</td><td id="totalService" class="p-3 text-orange-500">0h</td><td id="totalNuit" class="p-3 text-blue-400">0h</td><td id="totalFraisTachy" class="p-3 text-emerald-400">0€</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
 
         <div id="view-activities" class="page-view hidden space-y-6">
-             <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
-             <div id="activitiesList" class="space-y-4"></div>
+            <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
+            <div id="activitiesList" class="space-y-6"></div>
         </div>
 
         <div id="view-frais" class="page-view hidden space-y-6">
-             <h2 class="text-xl font-black italic uppercase">Mes Frais</h2>
-             <div id="fraisList" class="space-y-4"></div>
+            <div id="payrollSummary" class="glass-card p-5 border-l-4 border-emerald-500 flex justify-between items-center mb-4">
+                <div>
+                    <p id="payrollPeriod" class="text-[9px] font-black text-slate-500 uppercase italic mb-1">---</p>
+                    <p class="text-[10px] font-bold uppercase text-white">Total Paie Estimé</p>
+                </div>
+                <div class="text-right">
+                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-400">0.00€</p>
+                    <p id="detailPayroll" class="text-[8px] font-bold text-slate-400 uppercase">---</p>
+                </div>
+            </div>
+            <div id="fraisList" class="space-y-4"></div>
+        </div>
+
+        <div id="view-infractions" class="page-view hidden space-y-6">
+            <h2 class="text-xl font-black italic uppercase text-center">Infractions Détectées</h2>
+            <div id="infractionsBody" class="space-y-4"></div>
+        </div>
+
+        <div id="view-import" class="page-view hidden space-y-6">
+            <h2 class="text-xl font-black italic uppercase text-center">Gestion des Données</h2>
+            <div class="glass-card p-6 border-l-4 border-orange-500 mb-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="text-2xl">💳</div>
+                    <h3 class="text-[10px] font-black uppercase italic text-white">Lecteur de Carte Conducteur</h3>
+                </div>
+                <div id="cardProgressArea" class="hidden mb-4">
+                    <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden">
+                        <div id="importProgress" class="loading-bar"></div>
+                    </div>
+                </div>
+                <button onclick="startSimulatedImport()" class="w-full bg-orange-600 py-3 rounded-xl font-black uppercase text-[10px] italic text-white shadow-lg">Lancer la lecture carte</button>
+            </div>
+            <div class="glass-card p-6 border-l-4 border-blue-500">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="text-2xl">📁</div>
+                    <h3 class="text-[10px] font-black uppercase italic text-white">Importer un fichier .CSV</h3>
+                </div>
+                <div id="dropZone" class="w-full border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-800/30 mb-2" onclick="document.getElementById('fileInput').click()">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Cliquer pour choisir un fichier .CSV</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
+                </div>
+                <div id="fileStatusArea" class="hidden mt-4">
+                    <div class="flex justify-between items-center bg-blue-500/10 p-2 rounded border border-blue-500/20">
+                        <span id="fileNameDisplay" class="text-[9px] font-black text-blue-400 uppercase truncate w-40">---</span>
+                        <span id="filePercent" class="text-[9px] font-black text-white">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden mt-1">
+                        <div id="fileProgressBar" class="h-full bg-blue-500 w-0 transition-all"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-settings" class="page-view hidden space-y-6">
+            <h2 class="text-xl font-black italic uppercase text-slate-500 text-center">Réglages</h2>
+            <div class="glass-card p-6 space-y-4">
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche</span><input type="number" id="valPrime" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Sauvegarder</button>
+            </div>
         </div>
     </main>
 
+    <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
+        <div class="absolute inset-0 bg-black/80" onclick="closeModal()"></div>
+        <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
+            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-white"></h3>
+            <div id="modalBody"></div>
+            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white">Fermer</button>
+        </div>
+    </div>
+
     <script>
+        // --- VARIABLES GLOBALES ---
         let curM = new Date().getMonth(); 
-        let curY = new Date().getFullYear();
+        let curY = 2026;
+        let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { repas: 9.81, prime: 40.00 };
+        let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-        // État de l'application
-        let appData = JSON.parse(localStorage.getItem('monChrono_data')) || { imported: false, lastFile: "" };
+        // --- GESTION DES DONNÉES CSV ---
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
 
-        function initApp() {
-            document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
-            renderCalendar();
-            if(appData.imported) {
-                updateUIWithData();
-            }
+            const area = document.getElementById('fileStatusArea');
+            const bar = document.getElementById('fileProgressBar');
+            const perc = document.getElementById('filePercent');
+            area.classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const rows = text.split('\n');
+                let allActivities = [];
+
+                rows.forEach(row => {
+                    const cols = row.replace(/"/g, '').split(';');
+                    if (cols.length < 5) return;
+                    
+                    const dtParts = cols[0].split(' ');
+                    if(dtParts.length < 2) return;
+
+                    const dateStr = dtParts[0];
+                    const heureStr = dtParts[1];
+                    const type = cols[2];
+                    const duree = cols[4];
+                    if (type.includes("Card") || !duree.includes(":")) return;
+
+                    const [j, m, a] = dateStr.split('/').map(Number);
+                    const [hh, mm] = heureStr.split(':').map(Number);
+                    const timestamp = new Date(a, m - 1, j, hh, mm).getTime();
+
+                    allActivities.push({
+                        timestamp,
+                        date: dateStr,
+                        heure: heureStr.substring(0,5),
+                        type: type.toLowerCase().includes('repos') ? 'repos' : (type.toLowerCase().includes('conduite') ? 'conduite' : 'travail'),
+                        label: type,
+                        dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
+                    });
+                });
+
+                // Groupement par poste (repos > 7h = nouveau poste)
+                const postes = {};
+                let currentPosteDate = null;
+
+                allActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
+                    if (act.type !== 'repos') {
+                        if (!currentPosteDate) {
+                            currentPosteDate = act.date;
+                            postes[currentPosteDate] = [];
+                        }
+                        postes[currentPosteDate].push(act);
+                    } else if (act.dureeMinutes > 420) {
+                        currentPosteDate = null;
+                    } else if (currentPosteDate) {
+                        postes[currentPosteDate].push(act);
+                    }
+                });
+
+                localStorage.setItem('monChrono_data_csv', JSON.stringify(postes));
+                
+                // Animation barre
+                bar.style.width = "100%";
+                perc.innerText = "100%";
+                setTimeout(() => {
+                    area.classList.add('hidden');
+                    initApp();
+                    alert("Importation réussie !");
+                }, 500);
+            };
+            reader.readAsText(file);
         }
 
-        function renderCalendar() {
+        function calculerMinutesNuit(timestampDebut, minutesDuree) {
+            let minutesNuit = 0;
+            let current = new Date(timestampDebut);
+            for (let i = 0; i < minutesDuree; i++) {
+                const h = current.getHours();
+                if (h >= 21 || h < 6) minutesNuit++;
+                current.setMinutes(current.getMinutes() + 1);
+            }
+            return minutesNuit;
+        }
+
+        // --- INITIALISATION APP ---
+        function initApp() {
+            document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
+            document.getElementById('valRepas').value = tarifs.repas;
+            document.getElementById('valPrime').value = tarifs.prime;
+            
+            const dataCSV = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
             const grid = document.getElementById('grid');
-            grid.innerHTML = "";
+            const tBody = document.getElementById('bodyTachy');
+            const fList = document.getElementById('fraisList');
+            const actList = document.getElementById('activitiesList');
+            
+            grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
             document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
             
             let firstDay = new Date(curY, curM, 1).getDay();
@@ -115,75 +290,80 @@
             for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
 
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
+            let sumFrais = 0, sumPrimes = 0, totalServiceMois = 0, totalNuitMois = 0;
+
             for(let d=1; d<=daysInMonth; d++) {
-                const dayW = new Date(curY, curM, d).getDay();
-                // Si données importées, on colore les jours de semaine
-                const isWorked = appData.imported && (dayW !== 6 && dayW !== 0);
-                grid.innerHTML += `<div class="day-box ${isWorked ? 'worked' : 'rest'}">${d}</div>`;
-            }
-        }
+                const dFormatted = `${String(d).padStart(2, '0')}/${String(curM + 1).padStart(2, '0')}/${curY}`;
+                const isoStr = `${curY}-${String(curM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dateObj = new Date(curY, curM, d);
+                const dayW = dateObj.getDay();
 
-        async function handleFileSelect(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            document.getElementById('fileStatusArea').classList.remove('hidden');
-            const bar = document.getElementById('fileProgressBar');
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target.result;
-                if (content.includes("PETIT") && content.includes("DYLAN")) {
-                    let p = 0;
-                    const itv = setInterval(() => {
-                        p += 25; bar.style.width = p + "%";
-                        if(p >= 100) {
-                            clearInterval(itv);
-                            // SAUVEGARDE PERMANENTE
-                            appData.imported = true;
-                            appData.lastFile = file.name;
-                            localStorage.setItem('monChrono_data', JSON.stringify(appData));
-                            
-                            alert("Importation réussie : Bonjour Dylan.");
-                            updateUIWithData();
-                            navTo('dashboard');
-                            document.getElementById('fileStatusArea').classList.add('hidden');
-                        }
-                    }, 100);
-                } else {
-                    alert("Ce fichier n'est pas reconnu.");
-                    document.getElementById('fileStatusArea').classList.add('hidden');
+                let enConge = listeConges.some(p => isoStr >= p.start && isoStr <= p.end);
+                if (enConge) {
+                    grid.innerHTML += `<div class="day-box conge" onclick="alert('Jour de repos enregistré')">${d}</div>`;
+                    continue;
                 }
-            };
-            reader.readAsText(file);
-        }
 
-        function updateUIWithData() {
-            renderCalendar();
-            document.getElementById('activitiesList').innerHTML = `
-                <div class="glass-card p-4 border-l-4 border-orange-500">
-                    <p class="text-[10px] font-black uppercase text-orange-500">Dernier Import</p>
-                    <p class="text-sm font-bold text-white italic">${appData.lastFile}</p>
-                </div>`;
-            document.getElementById('fraisList').innerHTML = `
-                <div class="glass-card p-4 border-l-4 border-emerald-500">
-                    <p class="text-[10px] font-black uppercase text-emerald-500">Frais calculés</p>
-                    <p class="text-xl font-black text-white italic">Données synchronisées</p>
-                </div>`;
-        }
+                const poste = dataCSV[dFormatted];
 
-        function clearData() {
-            if(confirm("Effacer toutes les données ?")) {
-                localStorage.removeItem('monChrono_data');
-                appData = { imported: false, lastFile: "" };
-                location.reload();
+                if(poste) {
+                    let serviceJour = 0;
+                    let nuitJour = 0;
+
+                    poste.forEach(act => {
+                        if (act.type !== 'repos') {
+                            serviceJour += act.dureeMinutes;
+                            nuitJour += calculerMinutesNuit(act.timestamp, act.dureeMinutes);
+                        }
+                    });
+
+                    totalServiceMois += serviceJour;
+                    totalNuitMois += nuitJour;
+
+                    const hS = Math.floor(serviceJour/60), mS = serviceJour%60;
+                    const hN = Math.floor(nuitJour/60), mN = nuitJour%60;
+                    
+                    // Frais : Si plus de 4h de service = Repas. Dimanche = Prime.
+                    let f = (serviceJour > 240) ? tarifs.repas : 0;
+                    let p = (dayW === 0 ? tarifs.prime : 0);
+                    
+                    // On ne compte les frais que pour la paie estimée (simulation 15 au 14)
+                    sumFrais += f; sumPrimes += p;
+
+                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d}, '${hS}h${mS}', '${hN}h${mN}', ${(f + p).toFixed(2)})">${d}</div>`;
+                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${hS}h${mS}</td><td class="p-3 text-blue-400 font-black">${hN}h${mN}</td><td class="p-3 text-emerald-400 font-black">${(f+p).toFixed(2)}€</td></tr>`;
+                    
+                    if(f > 0 || p > 0) {
+                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 ${p > 0 ? 'border-purple-500' : 'border-emerald-500'}"><div><p class="text-[8px] font-black text-slate-500 uppercase">${d} ${moisNoms[curM]}</p><p class="text-xs font-bold text-white italic">${p>0?'Repas + Prime':'Repas Unique'}</p></div><p class="text-xl font-black italic text-white">${(f+p).toFixed(2)}€</p></div>`;
+                    }
+
+                    const row = document.createElement('div');
+                    row.className = "space-y-2 cursor-pointer";
+                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${d} ${moisNoms[curM]}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${hS}h${mS} serv.</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
+                    row.onclick = () => showTimelineFromData(d, poste);
+                    actList.appendChild(row);
+                } else {
+                    grid.innerHTML += `<div class="day-box rest">${d}</div>`;
+                }
             }
+
+            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + (totalServiceMois%60);
+            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + (totalNuitMois%60);
+            document.getElementById('totalFraisTachy').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
+            document.getElementById('totalPayroll').innerText = (sumFrais + sumPrimes).toFixed(2) + "€";
+            
+            let nextM = (curM + 1) % 12;
+            document.getElementById('payrollPeriod').innerText = `Période estimée : ${moisNoms[curM]}`;
+            document.getElementById('detailPayroll').innerText = `Frais: ${sumFrais.toFixed(2)}€ | Primes: ${sumPrimes.toFixed(2)}€`;
+            renderCongesList();
         }
 
+        // --- FONCTIONS NAVIGATION ET UI ---
         function navTo(id) {
             document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + id).classList.remove('hidden');
-            document.getElementById('monthNav').style.display = (['settings', 'import'].includes(id)) ? 'none' : 'flex';
+            const navMois = document.getElementById('monthNav');
+            navMois.style.display = (['settings', 'import', 'infractions'].includes(id)) ? 'none' : 'flex';
             toggleSidebar(false);
         }
 
@@ -194,7 +374,78 @@
             s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; 
         }
 
+        function setTab(t) { 
+            document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); 
+            document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); 
+            document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); 
+            document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); 
+        }
+
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
+        
+        function showHeures(d, s, n, t) {
+            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM].toUpperCase();
+            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-slate-400 uppercase italic">Service Total</span><span class="font-black text-white">${s}</span></div><div class="flex justify-between border-b border-white/5 pb-2"><span class="text-xs font-bold text-blue-400 uppercase italic">Heures de Nuit</span><span class="font-black text-white">${n}</span></div><div class="flex justify-between bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20"><span class="text-xs font-bold text-emerald-400 uppercase italic">Frais Journaliers</span><span class="font-black text-emerald-400">${t}€</span></div></div>`;
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function showTimelineFromData(d, segments) {
+            document.getElementById('modalDate').innerText = "Poste du " + d + " " + moisNoms[curM];
+            let html = '<div class="space-y-3">';
+            segments.forEach(x => { 
+                const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
+                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase" style="color:${color}">${x.label}</p><p class="text-sm font-black italic text-white">${Math.floor(x.dureeMinutes/60)}h${x.dureeMinutes%60}</p></div><p class="text-[11px] text-slate-500 font-bold">${x.heure}</p></div>`; 
+            });
+            document.getElementById('modalBody').innerHTML = html + '</div>';
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
+
+        function ajouterConge() {
+            const s = document.getElementById('congeStart').value;
+            const e = document.getElementById('congeEnd').value;
+            if(!s || !e) return;
+            listeConges.push({start: s, end: e});
+            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
+            initApp();
+        }
+
+        function supprimerConge(i) {
+            listeConges.splice(i, 1);
+            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
+            initApp();
+        }
+
+        function renderCongesList() {
+            const container = document.getElementById('listeCongesAffichage');
+            container.innerHTML = listeConges.map((c, index) => `
+                <div class="flex justify-between items-center bg-black/20 p-2 rounded border border-white/5">
+                    <span class="text-[9px] font-bold text-slate-300 uppercase">Du ${c.start} au ${c.end}</span>
+                    <button onclick="supprimerConge(${index})" class="text-red-500 text-xs">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function saveSettings() { 
+            tarifs.repas = parseFloat(document.getElementById('valRepas').value); 
+            tarifs.prime = parseFloat(document.getElementById('valPrime').value); 
+            localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
+            initApp(); alert("Réglages mis à jour !"); 
+        }
+
+        function startSimulatedImport() {
+            const bar = document.getElementById('importProgress');
+            document.getElementById('cardProgressArea').classList.remove('hidden');
+            bar.style.width = "100%";
+            setTimeout(() => {
+                document.getElementById('infractionsBody').innerHTML = `<div class="glass-card p-4 border-l-4 border-red-500 flex justify-between items-center mb-4"><div><p class="text-[9px] font-black text-red-500 uppercase">12 Mars — 02:45</p><p class="text-xs font-bold text-white uppercase italic">Repos journalier insuffisant</p></div><div class="bg-red-500/20 px-3 py-2 rounded-xl text-red-500 font-black text-[10px] italic border border-red-500/30">CLASSE 4</div></div>`;
+                alert("Lecture carte terminée !");
+                navTo('infractions');
+                document.getElementById('cardProgressArea').classList.add('hidden');
+                bar.style.width = "0%";
+            }, 2000);
+        }
     </script>
 </body>
 </html>
