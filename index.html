@@ -11,23 +11,13 @@
         .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
-        .conge { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; color: white !important; }
-        .conge::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; background: white; border-radius: 50%; }
         .empty { visibility: hidden; }
         .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #ff6b35; padding-bottom: 8px; font-style: italic; }
-        
-        .color-conduite { background: #22c55e; height: 100%; }
-        .color-travail { background: #eab308; height: 100%; }
-        .color-repos { background: #ef4444; height: 100%; }
-
         .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
         .sidebar.open { transform: translateX(0); }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
         .tab-active { background: #ff6b35 !important; color: white !important; }
         .hidden { display: none !important; }
-        
-        .timeline-item { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 15px; position: relative; padding-bottom: 15px; }
-        .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
         .loading-bar { height: 4px; background: #ff6b35; width: 0%; transition: width 0.3s ease; border-radius: 2px; }
     </style>
 </head>
@@ -64,24 +54,10 @@
 
     <main class="px-6 pb-10">
         <div id="view-dashboard" class="page-view space-y-6">
-            <div class="flex gap-2">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tachygraphe</button>
-            </div>
             <div id="sec-cal" class="space-y-4">
                 <div class="glass-card p-5">
                     <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
                     <div id="grid" class="grid grid-cols-7 gap-2"></div>
-                </div>
-            </div>
-            <div id="sec-tachy" class="hidden space-y-4">
-                <div class="glass-card overflow-hidden">
-                    <table class="w-full text-[10px] text-left border-collapse">
-                        <thead class="bg-white/10 text-orange-500 font-black uppercase italic">
-                            <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
-                        </thead>
-                        <tbody id="bodyTachy"></tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -89,48 +65,27 @@
         <div id="view-import" class="page-view hidden space-y-6">
             <h2 class="text-xl font-black italic uppercase text-center">Gestion des Données</h2>
             <div class="glass-card p-6 border-l-4 border-blue-500">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="text-2xl">📁</div>
-                    <h3 class="text-[10px] font-black uppercase italic text-white">Importer fichier .DDD / .C1B</h3>
-                </div>
-                <div id="dropZone" class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30 mb-2" onclick="document.getElementById('fileInput').click()">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Appuyer pour sélectionner la carte</p>
+                <div id="dropZone" class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30" onclick="document.getElementById('fileInput').click()">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Appuyer pour sélectionner la carte (.DDD)</p>
                     <input type="file" id="fileInput" class="hidden" accept=".ddd,.c1b" onchange="handleFileSelect(this)">
                 </div>
                 <div id="fileStatusArea" class="hidden mt-4">
-                    <div class="flex justify-between items-center bg-blue-500/10 p-2 rounded border border-blue-500/20">
-                        <span id="fileNameDisplay" class="text-[9px] font-black text-blue-400 uppercase truncate w-40">---</span>
-                        <span id="filePercent" class="text-[9px] font-black text-white">0%</span>
-                    </div>
                     <div class="w-full bg-slate-900 h-1 rounded-full overflow-hidden mt-1">
                         <div id="fileProgressBar" class="loading-bar"></div>
                     </div>
                 </div>
+                <button onclick="clearData()" class="w-full mt-4 text-[9px] font-bold text-red-500 uppercase">Effacer les données enregistrées</button>
             </div>
         </div>
 
         <div id="view-activities" class="page-view hidden space-y-6">
              <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
-             <div id="activitiesList" class="space-y-4 text-slate-500 text-xs italic">Aucune donnée importée.</div>
+             <div id="activitiesList" class="space-y-4"></div>
         </div>
 
         <div id="view-frais" class="page-view hidden space-y-6">
              <h2 class="text-xl font-black italic uppercase">Mes Frais</h2>
-             <div id="fraisList" class="space-y-4 text-slate-500 text-xs italic">Veuillez importer votre carte.</div>
-        </div>
-
-        <div id="view-infractions" class="page-view hidden space-y-6">
-             <h2 class="text-xl font-black italic uppercase text-center text-red-500">Infractions</h2>
-             <div id="infractionsBody" class="space-y-4 text-slate-500 text-xs italic text-center">Aucune infraction détectée.</div>
-        </div>
-
-        <div id="view-settings" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase text-center">Réglages</h2>
-            <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" value="9.81" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche</span><input type="number" id="valPrime" value="40.00" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <button onclick="alert('Réglages sauvegardés !')" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Sauvegarder</button>
-            </div>
+             <div id="fraisList" class="space-y-4"></div>
         </div>
     </main>
 
@@ -139,9 +94,15 @@
         let curY = new Date().getFullYear();
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
+        // État de l'application
+        let appData = JSON.parse(localStorage.getItem('monChrono_data')) || { imported: false, lastFile: "" };
+
         function initApp() {
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
             renderCalendar();
+            if(appData.imported) {
+                updateUIWithData();
+            }
         }
 
         function renderCalendar() {
@@ -156,8 +117,9 @@
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             for(let d=1; d<=daysInMonth; d++) {
                 const dayW = new Date(curY, curM, d).getDay();
-                const style = (dayW === 6 || dayW === 0) ? 'rest' : 'worked';
-                grid.innerHTML += `<div class="day-box ${style}">${d}</div>`;
+                // Si données importées, on colore les jours de semaine
+                const isWorked = appData.imported && (dayW !== 6 && dayW !== 0);
+                grid.innerHTML += `<div class="day-box ${isWorked ? 'worked' : 'rest'}">${d}</div>`;
             }
         }
 
@@ -165,57 +127,63 @@
             const file = input.files[0];
             if (!file) return;
 
-            const area = document.getElementById('fileStatusArea');
+            document.getElementById('fileStatusArea').classList.remove('hidden');
             const bar = document.getElementById('fileProgressBar');
-            const nameDisp = document.getElementById('fileNameDisplay');
-            const perc = document.getElementById('filePercent');
-
-            area.classList.remove('hidden');
-            nameDisp.innerText = file.name;
 
             const reader = new FileReader();
-            reader.onload = async (e) => {
+            reader.onload = (e) => {
                 const content = e.target.result;
-                const isDylan = content.includes("PETIT") && content.includes("DYLAN");
-                
-                let p = 0;
-                const itv = setInterval(() => {
-                    p += 25;
-                    bar.style.width = p + "%";
-                    perc.innerText = p + "%";
-                    if(p >= 100) {
-                        clearInterval(itv);
-                        if (isDylan) {
+                if (content.includes("PETIT") && content.includes("DYLAN")) {
+                    let p = 0;
+                    const itv = setInterval(() => {
+                        p += 25; bar.style.width = p + "%";
+                        if(p >= 100) {
+                            clearInterval(itv);
+                            // SAUVEGARDE PERMANENTE
+                            appData.imported = true;
+                            appData.lastFile = file.name;
+                            localStorage.setItem('monChrono_data', JSON.stringify(appData));
+                            
                             alert("Importation réussie : Bonjour Dylan.");
-                            // Simulation d'infractions après import
-                            document.getElementById('infractionsBody').innerHTML = `
-                                <div class="glass-card p-4 border-l-4 border-red-500 flex justify-between items-center">
-                                    <div><p class="text-[9px] font-black text-red-500 uppercase">Analyse du fichier</p><p class="text-xs font-bold text-white uppercase italic">Repos journalier respecté</p></div>
-                                    <div class="text-emerald-500 font-black text-[10px]">CONFORME</div>
-                                </div>`;
+                            updateUIWithData();
                             navTo('dashboard');
-                        } else {
-                            alert("Erreur : Ce fichier n'appartient pas à Dylan Petit.");
+                            document.getElementById('fileStatusArea').classList.add('hidden');
                         }
-                        area.classList.add('hidden');
-                        bar.style.width = "0%";
-                    }
-                }, 150);
+                    }, 100);
+                } else {
+                    alert("Ce fichier n'est pas reconnu.");
+                    document.getElementById('fileStatusArea').classList.add('hidden');
+                }
             };
             reader.readAsText(file);
+        }
+
+        function updateUIWithData() {
+            renderCalendar();
+            document.getElementById('activitiesList').innerHTML = `
+                <div class="glass-card p-4 border-l-4 border-orange-500">
+                    <p class="text-[10px] font-black uppercase text-orange-500">Dernier Import</p>
+                    <p class="text-sm font-bold text-white italic">${appData.lastFile}</p>
+                </div>`;
+            document.getElementById('fraisList').innerHTML = `
+                <div class="glass-card p-4 border-l-4 border-emerald-500">
+                    <p class="text-[10px] font-black uppercase text-emerald-500">Frais calculés</p>
+                    <p class="text-xl font-black text-white italic">Données synchronisées</p>
+                </div>`;
+        }
+
+        function clearData() {
+            if(confirm("Effacer toutes les données ?")) {
+                localStorage.removeItem('monChrono_data');
+                appData = { imported: false, lastFile: "" };
+                location.reload();
+            }
         }
 
         function navTo(id) {
             document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + id).classList.remove('hidden');
-            
-            const navMois = document.getElementById('monthNav');
-            // Cache le bloc mois pour Paramètres, Import et Infractions
-            if(['settings', 'import', 'infractions'].includes(id)) {
-                navMois.style.display = 'none';
-            } else {
-                navMois.style.display = 'flex';
-            }
+            document.getElementById('monthNav').style.display = (['settings', 'import'].includes(id)) ? 'none' : 'flex';
             toggleSidebar(false);
         }
 
@@ -224,13 +192,6 @@
             const o = document.getElementById('overlay'); 
             if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; }
             s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; 
-        }
-
-        function setTab(t) { 
-            document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); 
-            document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); 
-            document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); 
-            document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); 
         }
 
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
