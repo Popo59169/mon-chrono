@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mon Chrono - Dylan Petit</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1042/1042339.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
@@ -152,6 +157,18 @@
     </div>
 
     <script>
+        // Enregistrement du Service Worker pour le mode hors-ligne
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('SW enregistré !', reg);
+                }).catch(err => {
+                    console.log('Erreur SW', err);
+                });
+            });
+        }
+
+        // --- Logique Application ---
         let now = new Date();
         let curM = now.getMonth(); 
         let curY = now.getFullYear();
@@ -164,6 +181,31 @@
             const d = String(date.getDate()).padStart(2, '0');
             const m = String(date.getMonth() + 1).padStart(2, '0');
             return joursFeries.includes(`${d}/${m}`);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').style.display = document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
+        }
+
+        function navTo(view) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.add('hidden'));
+            document.getElementById('view-' + view).classList.remove('hidden');
+            toggleSidebar();
+        }
+
+        function setTab(tab) {
+            document.getElementById('sec-cal').classList.toggle('hidden', tab !== 'cal');
+            document.getElementById('sec-tachy').classList.toggle('hidden', tab !== 'tachy');
+            document.getElementById('btnCal').classList.toggle('tab-active', tab === 'cal');
+            document.getElementById('btnTachy').classList.toggle('tab-active', tab === 'tachy');
+        }
+
+        function changeMonth(dir) {
+            curM += dir;
+            if (curM < 0) { curM = 11; curY--; }
+            if (curM > 11) { curM = 0; curY++; }
+            initApp();
         }
 
         function handleFileSelect(input) {
@@ -242,6 +284,14 @@
             return minutesNuit;
         }
 
+        function showHeures(d, s, n) {
+            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM];
+            document.getElementById('modalBody').innerHTML = `<div class='space-y-4'><div class='flex justify-between'><span class='text-slate-400'>Service</span><span class='font-black'>${s}</span></div><div class='flex justify-between'><span class='text-blue-400'>Heures de Nuit</span><span class='font-black'>${n}</span></div></div>`;
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
+
         function initApp() {
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
             document.getElementById('labelAnnee').innerText = "Année " + curY;
@@ -262,7 +312,6 @@
             let sumFraisPaie = 0, sumPrimesMois = 0, totalServiceMois = 0, totalNuitMois = 0, totalFraisTachy = 0;
             let countTravailAnnuel = 0, countCongeAnnuel = 0;
 
-            // --- CALCULS ANNUELS ---
             Object.keys(dataCSV).forEach(dateStr => {
                 const [d, m, y] = dateStr.split('/').map(Number);
                 if (y === curY) countTravailAnnuel++;
@@ -274,7 +323,6 @@
             document.getElementById('countTravailAnnuel').innerText = countTravailAnnuel;
             document.getElementById('countCongeAnnuel').innerText = countCongeAnnuel;
 
-            // --- REMPLISSAGE MOIS ---
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             for(let d=1; d<=daysInMonth; d++) {
                 const dFormatted = `${String(d).padStart(2, '0')}/${String(curM + 1).padStart(2, '0')}/${curY}`;
@@ -293,85 +341,16 @@
                     const row = document.createElement('div');
                     row.className = "space-y-2 cursor-pointer";
                     row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${dFormatted}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${sJ%60}</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
-                    row.onclick = () => showTimelineFromData(d, poste);
                     actList.appendChild(row);
                 } else {
                     grid.innerHTML += `<div class="day-box rest ${isConge ? 'conge' : ''}" onclick="toggleConge('${dFormatted}')">${d}</div>`;
                 }
             }
-
-            // LOGIQUE FRAIS & PRIMES
-            Object.keys(dataCSV).forEach(dateStr => {
-                const [d, m, y] = dateStr.split('/').map(Number);
-                const dateDepart = new Date(y, m-1, d);
-                const poste = dataCSV[dateStr];
-                let serviceMins = 0;
-                poste.forEach(a => { if(a.type!=='repos') serviceMins += a.dureeMinutes; });
-                if (serviceMins > 0) {
-                    if (dateDepart.getMonth() === curM && dateDepart.getFullYear() === curY) {
-                        if (dateDepart.getDay() === 0 || estJourFerie(dateDepart)) {
-                            sumPrimesMois += tarifs.prime;
-                            fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">${dateStr}</p><p class="text-xs font-bold text-white italic">Prime Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${tarifs.prime}€</p></div>`;
-                        }
-                    }
-                    if (serviceMins > 240) {
-                        const hDep = parseInt(poste[0].heure.split(':')[0]);
-                        let dateComptable = new Date(dateDepart);
-                        if (hDep >= 18) dateComptable.setDate(dateDepart.getDate() + 1);
-                        if (dateComptable >= new Date(curY, curM, 15) && dateComptable <= new Date(curY, curM+1, 14)) {
-                            sumFraisPaie += tarifs.repas;
-                            fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">Départ ${dateStr}</p><p class="text-xs font-bold text-white italic">Repas Nuit (Bascule)</p></div><p class="text-xl font-black text-white">${tarifs.repas}€</p></div>`;
-                        }
-                    }
-                }
-            });
-
-            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + (totalServiceMois%60);
-            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + (totalNuitMois%60);
+            
+            // Finalisation calculs globaux
+            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h";
+            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h";
             document.getElementById('totalFraisTachy').innerText = totalFraisTachy.toFixed(2) + "€";
-            document.getElementById('totalPayroll').innerText = (sumFraisPaie + sumPrimesMois).toFixed(2) + "€";
-            document.getElementById('detailPayroll').innerText = `Frais: ${sumFraisPaie.toFixed(2)}€ | Primes: ${sumPrimesMois.toFixed(2)}€`;
-        }
-
-        // FONCTIONS NAVIGATION ET MODALES
-        function navTo(id) {
-            document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
-            document.getElementById('view-' + id).classList.remove('hidden');
-            toggleSidebar(false);
-        }
-        function toggleSidebar(f) { 
-            const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); 
-            if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; }
-            s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; 
-        }
-        function setTab(t) { 
-            document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); 
-            document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); 
-            document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); 
-            document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); 
-        }
-        function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
-        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-        function saveSettings() { 
-            tarifs.repas = parseFloat(document.getElementById('valRepas').value); 
-            tarifs.prime = parseFloat(document.getElementById('valPrime').value); 
-            localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
-            initApp(); alert("Enregistré"); 
-        }
-        function showHeures(d, s, n) {
-            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM];
-            document.getElementById('modalBody').innerHTML = `<p class="text-white font-black">Service: ${s}</p><p class="text-blue-400 font-black">Nuit: ${n}</p>`;
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
-        function showTimelineFromData(d, segments) {
-            document.getElementById('modalDate').innerText = "Détail du " + d;
-            let html = '<div class="space-y-3">';
-            segments.forEach(x => { 
-                const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black text-white">${Math.floor(x.dureeMinutes/60)}h${x.dureeMinutes%60}</p></div>`; 
-            });
-            document.getElementById('modalBody').innerHTML = html + '</div>';
-            document.getElementById('dayModal').classList.remove('hidden');
         }
     </script>
 </body>
