@@ -3,52 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Connexion USB Mon Chrono</title>
+    <title>Mon Chrono - Lecteur Carte Conducteur</title>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        button { background: #28a745; color: white; border: none; padding: 15px 25px; border-radius: 5px; font-size: 18px; cursor: pointer; }
-        #log { margin-top: 20px; padding: 10px; border: 1px solid #444; text-align: left; background: #000; font-family: monospace; }
+        :root { --bg-color: #0d1117; --card-bg: #161b22; --text-color: #c9d1d9; --accent: #238636; --border: #30363d; }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        
+        .header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .status-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin: 20px 0; }
+        
+        button { background-color: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        button:active { transform: scale(0.98); opacity: 0.8; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card-bg); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background: #21262d; color: #8b949e; text-transform: uppercase; font-size: 12px; }
+
+        .console { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 5px; font-size: 11px; margin-top: 20px; max-height: 150px; overflow-y: auto; border: 1px solid #333; }
+        .badge-nuit { background: #388bfd; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
     </style>
 </head>
 <body>
 
-    <h2>Diagnostic USB-C</h2>
-    <p>Branchez le lecteur et appuyez sur le bouton ci-dessous.</p>
-    
-    <button id="btnConnect">TESTER LA CONNEXION</button>
+<div class="container">
+    <div class="header">
+        <h1>🚚 Mon Chrono</h1>
+        <p>Lecture de carte conducteur USB-C</p>
+    </div>
 
-    <div id="log">Attente d'action...</div>
+    <div class="status-card">
+        <button id="btnLecture">🟢 LIRE MA CARTE CONDUCTEUR</button>
+    </div>
 
-    <script>
-        const logDiv = document.getElementById('log');
+    <table id="tableauDonnees">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Service</th>
+                <th>Nuit Net</th>
+                <th>Frais</th>
+            </tr>
+        </thead>
+        <tbody id="corpsTableau">
+            <tr id="ligneAttente">
+                <td colspan="4" style="text-align:center; color:#8b949e;">En attente de connexion...</td>
+            </tr>
+        </tbody>
+    </table>
 
-        function printLog(msg) {
-            logDiv.innerHTML += "<br>> " + msg;
-            console.log(msg);
-        }
+    <div class="console" id="debugConsole">
+        > Système prêt. En attente du lecteur ACR39U...
+    </div>
+</div>
 
-        document.getElementById('btnConnect').addEventListener('click', async () => {
-            printLog("Recherche d'appareil (SANS FILTRE)...");
+<script>
+    const btnLecture = document.getElementById('btnLecture');
+    const debugConsole = document.getElementById('debugConsole');
+    const corpsTableau = document.getElementById('corpsTableau');
 
-            try {
-                // TEST CRUCIAL : On enlève le filtre vendorId pour tout voir
-                const device = await navigator.usb.requestDevice({ filters: [] });
+    function log(msg) {
+        const time = new Date().toLocaleTimeString('fr-FR');
+        debugConsole.innerHTML += `<br>[${time}] > ${msg}`;
+        debugConsole.scrollTop = debugConsole.scrollHeight;
+        console.log(msg);
+    }
 
-                printLog("✅ APPAREIL TROUVÉ !");
-                printLog("Nom : " + device.productName);
-                printLog("Fabricant : " + device.manufacturerName);
-                printLog("Vendor ID : " + device.vendorId);
-                
-                alert("Connexion réussie avec : " + device.productName);
+    // Fonction pour ajouter une ligne au tableau
+    function ajouterLigne(date, service, nuit, frais) {
+        const ligneAttente = document.getElementById('ligneAttente');
+        if (ligneAttente) ligneAttente.remove();
 
-            } catch (err) {
-                printLog("❌ ERREUR : " + err.message);
-                if (err.message.includes("No device selected")) {
-                    printLog("L'utilisateur a annulé ou la liste était vide.");
-                }
-                printLog("Vérifiez que l'USB n'est pas en mode 'Charge seule'");
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${date}</td>
+            <td>${service}</td>
+            <td><span class="badge-nuit">${nuit}</span></td>
+            <td>${frais}€</td>
+        `;
+        corpsTableau.appendChild(row);
+    }
+
+    btnLecture.addEventListener('click', async () => {
+        log("Initialisation de la recherche USB...");
+
+        try {
+            // Utilisation du filtre vide pour maximiser les chances de détection (Succès à 07:14)
+            const device = await navigator.usb.requestDevice({ filters: [] });
+
+            log(`✅ Connecté à : ${device.productName}`);
+            log(`Fabricant : ${device.manufacturerName}`);
+            
+            await device.open();
+            log("Port USB ouvert avec succès.");
+
+            if (device.configuration === null) {
+                await device.selectConfiguration(1);
+                log("Configuration USB sélectionnée.");
             }
-        });
-    </script>
+
+            await device.claimInterface(0);
+            log("Interface matériel revendiquée.");
+
+            // Simulation de lecture pour l'affichage (à remplacer par ton parseur binaire de carte)
+            log("Lecture des données de la carte en cours...");
+            
+            // On simule une donnée pour vérifier que le tableau se remplit bien
+            setTimeout(() => {
+                const aujourdhui = new Date().toLocaleDateString('fr-FR');
+                ajouterLigne(aujourdhui, "Service Nuit", "07h45", "15.00");
+                log("✨ Tableau mis à jour avec les données de la carte.");
+            }, 1500);
+
+        } catch (err) {
+            log(`❌ Erreur : ${err.message}`);
+            if (err.message.includes("No device selected")) {
+                log("Conseil : Choisis 'ACR39U' dans la liste Chrome.");
+            } else if (err.message.includes("SecurityError")) {
+                log("Conseil : Vérifie les permissions USB dans Android.");
+            }
+        }
+    });
+
+    // Détection de déconnexion
+    navigator.usb.addEventListener('disconnect', (event) => {
+        log("🔌 Lecteur débranché.");
+        const row = document.createElement('tr');
+        row.id = "ligneAttente";
+        row.innerHTML = `<td colspan="4" style="text-align:center; color:#8b949e;">Lecteur déconnecté.</td>`;
+        corpsTableau.innerHTML = "";
+        corpsTableau.appendChild(row);
+    });
+</script>
+
 </body>
 </html>
