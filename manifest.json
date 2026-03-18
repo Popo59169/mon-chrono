@@ -1,0 +1,18 @@
+{
+  "name": "Mon Chrono Dylan Petit",
+  "short_name": "Mon Chrono",
+  "description": "Gestion des heures et frais pour conducteur routier",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#ff6b35",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1042/1042339.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
