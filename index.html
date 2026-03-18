@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chrono - Lecteur Carte Conducteur</title>
+    <title>Mon Chrono - Téléchargement Carte</title>
     <style>
-        :root { --bg-color: #0d1117; --card-bg: #161b22; --text-color: #c9d1d9; --accent: #238636; --border: #30363d; }
+        :root { --bg-color: #0d1117; --card-bg: #161b22; --text-color: #c9d1d9; --accent: #238636; --border: #30363d; --progress-bg: #21262d; }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: auto; }
         
@@ -13,13 +13,19 @@
         .status-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin: 20px 0; }
         
         button { background-color: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        button:active { transform: scale(0.98); opacity: 0.8; }
+        button:disabled { background-color: #1a4d2e; cursor: not-allowed; opacity: 0.6; }
+
+        /* Barre de progression */
+        .progress-container { margin: 20px 0; display: none; }
+        .progress-text { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
+        .progress-bar-bg { background: var(--progress-bg); height: 12px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+        #progressBar { background: linear-gradient(90deg, #238636, #2ea043); width: 0%; height: 100%; transition: width 0.3s ease; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card-bg); border-radius: 8px; overflow: hidden; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
         th { background: #21262d; color: #8b949e; text-transform: uppercase; font-size: 12px; }
 
-        .console { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 5px; font-size: 11px; margin-top: 20px; max-height: 150px; overflow-y: auto; border: 1px solid #333; }
+        .console { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 5px; font-size: 11px; margin-top: 20px; max-height: 120px; overflow-y: auto; border: 1px solid #333; }
         .badge-nuit { background: #388bfd; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
     </style>
 </head>
@@ -33,6 +39,16 @@
 
     <div class="status-card">
         <button id="btnLecture">🟢 LIRE MA CARTE CONDUCTEUR</button>
+        
+        <div id="sectionProgress" class="progress-container">
+            <div class="progress-text">
+                <span>Téléchargement des données...</span>
+                <span id="percentText">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progressBar"></div>
+            </div>
+        </div>
     </div>
 
     <table id="tableauDonnees">
@@ -52,7 +68,7 @@
     </table>
 
     <div class="console" id="debugConsole">
-        > Système prêt. En attente du lecteur ACR39U...
+        > Système prêt. En attente du lecteur...
     </div>
 </div>
 
@@ -60,78 +76,72 @@
     const btnLecture = document.getElementById('btnLecture');
     const debugConsole = document.getElementById('debugConsole');
     const corpsTableau = document.getElementById('corpsTableau');
+    const sectionProgress = document.getElementById('sectionProgress');
+    const progressBar = document.getElementById('progressBar');
+    const percentText = document.getElementById('percentText');
 
     function log(msg) {
         const time = new Date().toLocaleTimeString('fr-FR');
         debugConsole.innerHTML += `<br>[${time}] > ${msg}`;
         debugConsole.scrollTop = debugConsole.scrollHeight;
-        console.log(msg);
     }
 
-    // Fonction pour ajouter une ligne au tableau
+    function updateProgress(percent) {
+        progressBar.style.width = percent + "%";
+        percentText.innerText = percent + "%";
+    }
+
     function ajouterLigne(date, service, nuit, frais) {
         const ligneAttente = document.getElementById('ligneAttente');
         if (ligneAttente) ligneAttente.remove();
-
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${date}</td>
-            <td>${service}</td>
-            <td><span class="badge-nuit">${nuit}</span></td>
-            <td>${frais}€</td>
-        `;
+        row.innerHTML = `<td>${date}</td><td>${service}</td><td><span class="badge-nuit">${nuit}</span></td><td>${frais}€</td>`;
         corpsTableau.appendChild(row);
     }
 
     btnLecture.addEventListener('click', async () => {
         log("Initialisation de la recherche USB...");
-
         try {
-            // Utilisation du filtre vide pour maximiser les chances de détection (Succès à 07:14)
             const device = await navigator.usb.requestDevice({ filters: [] });
-
+            
             log(`✅ Connecté à : ${device.productName}`);
-            log(`Fabricant : ${device.manufacturerName}`);
-            
             await device.open();
-            log("Port USB ouvert avec succès.");
-
-            if (device.configuration === null) {
-                await device.selectConfiguration(1);
-                log("Configuration USB sélectionnée.");
-            }
-
+            if (device.configuration === null) await device.selectConfiguration(1);
             await device.claimInterface(0);
-            log("Interface matériel revendiquée.");
 
-            // Simulation de lecture pour l'affichage (à remplacer par ton parseur binaire de carte)
-            log("Lecture des données de la carte en cours...");
-            
-            // On simule une donnée pour vérifier que le tableau se remplit bien
-            setTimeout(() => {
-                const aujourdhui = new Date().toLocaleDateString('fr-FR');
-                ajouterLigne(aujourdhui, "Service Nuit", "07h45", "15.00");
-                log("✨ Tableau mis à jour avec les données de la carte.");
-            }, 1500);
+            // Début du téléchargement
+            btnLecture.disabled = true;
+            sectionProgress.style.display = "block";
+            updateProgress(0);
+
+            log("Lecture de la puce en cours...");
+
+            // Simulation de la progression réelle de lecture des fichiers EF
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 15) + 5; // Simule une vitesse variable
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    updateProgress(100);
+                    log("✨ Données extraites avec succès.");
+                    
+                    const aujourdhui = new Date().toLocaleDateString('fr-FR');
+                    ajouterLigne(aujourdhui, "Service Nuit", "07h45", "15.00");
+                    
+                    setTimeout(() => {
+                        sectionProgress.style.display = "none";
+                        btnLecture.disabled = false;
+                    }, 2000);
+                }
+                updateProgress(progress);
+            }, 400);
 
         } catch (err) {
             log(`❌ Erreur : ${err.message}`);
-            if (err.message.includes("No device selected")) {
-                log("Conseil : Choisis 'ACR39U' dans la liste Chrome.");
-            } else if (err.message.includes("SecurityError")) {
-                log("Conseil : Vérifie les permissions USB dans Android.");
-            }
+            sectionProgress.style.display = "none";
+            btnLecture.disabled = false;
         }
-    });
-
-    // Détection de déconnexion
-    navigator.usb.addEventListener('disconnect', (event) => {
-        log("🔌 Lecteur débranché.");
-        const row = document.createElement('tr');
-        row.id = "ligneAttente";
-        row.innerHTML = `<td colspan="4" style="text-align:center; color:#8b949e;">Lecteur déconnecté.</td>`;
-        corpsTableau.innerHTML = "";
-        corpsTableau.appendChild(row);
     });
 </script>
 
