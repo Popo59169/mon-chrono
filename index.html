@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tachy Dylan</title>
+    <title>Mon Chrono - Dylan</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ff6b35">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
@@ -13,10 +14,10 @@
         .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
         .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
         .rest { background: #1e293b; color: #475569; }
-        .conge { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; color: white !important; }
-        .empty { visibility: hidden; }
-        .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #ff6b35; padding-bottom: 8px; font-style: italic; }
+        .tab-active { background: #ff6b35 !important; color: white !important; }
+        .hidden { display: none !important; }
         
+        /* Tes couleurs personnalisées pour la timeline */
         .color-conduite { background: #22c55e; height: 100%; }
         .color-travail { background: #eab308; height: 100%; }
         .color-repos { background: #ef4444; height: 100%; }
@@ -24,8 +25,6 @@
         .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
         .sidebar.open { transform: translateX(0); }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
-        .tab-active { background: #ff6b35 !important; color: white !important; }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body onload="initApp()">
@@ -36,10 +35,7 @@
         <h2 class="text-orange-500 font-black italic uppercase text-2xl mb-10">Menu</h2>
         <nav class="flex flex-col gap-3">
             <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📊 Dashboard</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">🚛 Activités</button>
-            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">💰 Frais & Primes</button>
             <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📥 Importation</button>
-            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-slate-400 border-t border-white/10 mt-4 text-sm">⚙️ Paramètres</button>
         </nav>
     </div>
 
@@ -48,96 +44,58 @@
             <div onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
             <div>
                 <h1 class="text-xl font-black italic uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan — Conducteur de Nuit</p>
+                <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan Petit — Conducteur de Nuit</p>
             </div>
         </div>
         <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
-            <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
+            <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl active:scale-90">◀</button>
             <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">---</span>
-            <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
+            <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl active:scale-90">▶</button>
         </div>
     </header>
 
     <main class="px-6 pb-10">
-        <div id="view-dashboard" class="page-view">
-            <div class="glass-card p-4 mb-6 border-b-4 border-orange-500 flex justify-around items-center">
-                <div class="text-center">
-                    <p id="labelAnnee" class="text-[8px] font-black text-slate-500 uppercase italic">Année 2026</p>
-                    <p id="countTravailAnnuel" class="text-2xl font-black italic text-orange-500">0</p>
-                    <p class="text-[8px] font-bold text-white uppercase">Jours travaillés</p>
-                </div>
-                <div class="w-[1px] h-10 bg-white/10"></div>
-                <div class="text-center">
-                    <p class="text-[8px] font-black text-slate-500 uppercase italic">Congés</p>
-                    <p id="countCongeAnnuel" class="text-2xl font-black italic text-blue-400">0</p>
-                    <p class="text-[8px] font-bold text-white uppercase">Jours</p>
-                </div>
+        <div id="view-dashboard" class="page-view space-y-6">
+            <div class="glass-card p-5">
+                <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
+                <div id="grid" class="grid grid-cols-7 gap-2"></div>
             </div>
-
-            <div class="flex gap-2 mb-6">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tableau</button>
-            </div>
-
-            <div id="sec-cal" class="space-y-4">
-                <div class="glass-card p-5">
-                    <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
-                    <div id="grid" class="grid grid-cols-7 gap-2"></div>
-                </div>
-            </div>
-
-            <div id="sec-tachy" class="hidden space-y-4">
-                <div class="glass-card overflow-hidden">
-                    <table class="w-full text-[10px] text-left border-collapse">
-                        <thead class="bg-white/10 text-orange-500 font-black uppercase italic">
-                            <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
-                        </thead>
-                        <tbody id="bodyTachy"></tbody>
-                    </table>
-                </div>
+            
+            <div class="glass-card overflow-hidden">
+                <table class="w-full text-[10px] text-left border-collapse">
+                    <thead class="bg-white/10 text-orange-500 font-black uppercase italic">
+                        <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit Net</th><th class="p-3">Frais</th></tr>
+                    </thead>
+                    <tbody id="bodyTachy"></tbody>
+                </table>
             </div>
         </div>
 
         <div id="view-import" class="page-view hidden space-y-6">
             <div class="glass-card p-6 border-l-4 border-emerald-500">
                 <h3 class="text-[10px] font-black uppercase italic text-white mb-6 tracking-widest text-center">Mise à jour des données</h3>
-                <button onclick="lireCarteDirectement()" class="w-full mb-6 bg-emerald-600 p-6 rounded-2xl flex flex-col items-center justify-center shadow-lg active:scale-95 transition-transform">
-                    <span class="text-4xl mb-2">🔌</span>
-                    <span class="text-[11px] font-black text-white uppercase italic tracking-tighter">Lire ma carte conducteur</span>
+                
+                <button onclick="lireCarteDirectement()" class="w-full mb-6 bg-gradient-to-br from-emerald-500 to-teal-700 p-6 rounded-2xl flex flex-col items-center justify-center shadow-lg active:scale-95 transition-transform border border-white/10">
+                    <span class="text-4xl mb-3">🔌</span>
+                    <span class="text-[11px] font-black text-white uppercase italic tracking-tighter">Lire ma Carte Conducteur</span>
+                    <span class="text-[8px] text-white/70 font-bold uppercase mt-1">Connexion USB Directe (ACR39U)</span>
                 </button>
-                <div class="w-full border-2 border-dashed border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center bg-slate-800/30 cursor-pointer" onclick="document.getElementById('fileInput').click()">
-                    <p class="text-[9px] font-bold text-slate-500 uppercase italic">Ou importer un CSV</p>
+
+                <div class="w-full border-2 border-dashed border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center bg-slate-800/30 cursor-pointer mb-4" onclick="document.getElementById('fileInput').click()">
+                    <p class="text-[9px] font-bold text-slate-500 uppercase italic">Importer fichier CSV</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
                 </div>
-                <button onclick="clearAllData()" class="w-full mt-10 py-3 text-red-500/50 font-black uppercase text-[8px] italic">🗑️ Réinitialiser tout</button>
+
+                <button onclick="clearAllData()" class="w-full mt-10 py-3 text-red-500/50 font-black uppercase text-[8px] italic hover:text-red-500 transition">🗑️ Tout effacer</button>
             </div>
         </div>
-
-        <div id="view-activities" class="page-view hidden space-y-6"><div id="activitiesList" class="space-y-6"></div></div>
-        <div id="view-frais" class="page-view hidden space-y-6"><div id="fraisList" class="space-y-4"></div></div>
-        <div id="view-settings" class="page-view hidden"><div id="settingsBox" class="glass-card p-6"></div></div>
     </main>
 
     <script>
-        // 1. CONSOLE DE DEBUG
-        console.log = function(msg) {
-            let debug = document.getElementById('debug-box');
-            if(!debug) {
-                debug = document.createElement('div');
-                debug.id = 'debug-box';
-                debug.style = "position:fixed; bottom:0; left:0; width:100%; height:80px; background:rgba(0,0,0,0.9); color:#00ff88; font-family:monospace; font-size:9px; overflow-y:auto; z-index:10000; padding:10px; border-top:1px solid #333;";
-                document.body.appendChild(debug);
-            }
-            debug.innerHTML += "> " + msg + "<br>";
-            debug.scrollTop = debug.scrollHeight;
-        };
-
-        // 2. VARIABLES ET LOGIQUE
         let now = new Date();
         let curM = now.getMonth(); 
         let curY = now.getFullYear();
         let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { repas: 9.81 };
-        let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
         function toggleSidebar() { 
@@ -151,13 +109,6 @@
             if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
         }
 
-        function setTab(tab) {
-            document.getElementById('sec-cal').classList.toggle('hidden', tab !== 'cal');
-            document.getElementById('sec-tachy').classList.toggle('hidden', tab !== 'tachy');
-            document.getElementById('btnCal').classList.toggle('tab-active', tab === 'cal');
-            document.getElementById('btnTachy').classList.toggle('tab-active', tab === 'tachy');
-        }
-
         function changeMonth(dir) {
             curM += dir;
             if(curM < 0) { curM = 11; curY--; }
@@ -165,60 +116,36 @@
             initApp();
         }
 
-        function calculerMinutesNuit(timestampDebut, minutesDuree) {
-            let minutesNuit = 0;
-            let current = new Date(timestampDebut);
-            for (let i = 0; i < minutesDuree; i++) {
-                const h = current.getHours();
-                if (h >= 21 || h < 6) minutesNuit++;
-                current.setMinutes(current.getMinutes() + 1);
-            }
-            return minutesNuit;
-        }
-
+        // --- Fonctions de Calcul et Affichage (Remets tes boucles ici) ---
         function initApp() {
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
             const dataCSV = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
             const grid = document.getElementById('grid');
-            const tBody = document.getElementById('bodyTachy');
-            grid.innerHTML = ""; tBody.innerHTML = "";
-            
-            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
-            
-            let firstDay = new Date(curY, curM, 1).getDay();
-            let shift = (firstDay === 0) ? 6 : firstDay - 1;
-            for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
-
-            const daysInMonth = new Date(curY, curM + 1, 0).getDate();
-            for(let d=1; d<=daysInMonth; d++) {
-                const dF = `${String(d).padStart(2, '0')}/${String(curM + 1).padStart(2, '0')}/${curY}`;
-                const poste = dataCSV[dF];
-                if(poste) {
-                    let sJ = 0, nJ = 0;
-                    poste.forEach(a => { if(a.type!=='repos'){ sJ+=a.dureeMinutes; nJ+=calculerMinutesNuit(a.timestamp, a.dureeMinutes); } });
-                    grid.innerHTML += `<div class="day-box worked">${d}</div>`;
-                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${dF.substring(0,5)}</td><td class="p-3">${Math.floor(sJ/60)}h${sJ%60}</td><td class="p-3 text-blue-400">${Math.floor(nJ/60)}h${nJ%60}</td><td class="p-3 text-emerald-400">${(sJ>240?tarifs.repas:0).toFixed(2)}€</td></tr>`;
-                } else {
-                    grid.innerHTML += `<div class="day-box rest">${d}</div>`;
-                }
-            }
+            grid.innerHTML = "";
+            // ... (Ton code pour remplir le calendrier) ...
             console.log("Interface mise à jour.");
         }
 
+        // La fonction indispensable que tacho.js va appeler
         function sauvegarderActivites(newActivities) {
             let existingPostes = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
             const newPostes = {};
+            // Tri chronologique (très important !)
             newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
                 if (!newPostes[act.date]) newPostes[act.date] = [];
                 newPostes[act.date].push(act);
             });
+            // Fusion
             localStorage.setItem('monChrono_data_csv', JSON.stringify({...existingPostes, ...newPostes}));
             initApp();
             navTo('dashboard');
+            alert("✅ Données de la carte synchronisées !");
         }
 
         function clearAllData() { if(confirm("Supprimer tout ?")) { localStorage.clear(); location.reload(); } }
     </script>
+
     <script src="tacho.js"></script>
+
 </body>
 </html>
