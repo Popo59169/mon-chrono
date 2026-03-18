@@ -1,0 +1,14 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Tachy",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Tachy",
+  "start_url": "/",
+  "theme_color": "#ff8000",
+  "id": "Tachy",
+  "lang": "fr",
+  "description": "Application qui gère le carte qu'on ne tachygraphe du chauffeur"
+}
