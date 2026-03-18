@@ -3,30 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Rapide</title>
+    <title>Mon Chrono - Connecté</title>
     <style>
-        body { background: #0d1117; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        button { background: #238636; color: white; border: none; padding: 20px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 18px; }
-        #status { margin-top: 20px; color: #00ff00; font-family: monospace; font-size: 12px; }
+        :root { --bg: #0d1117; --card: #161b22; --green: #238636; --border: #30363d; }
+        body { background: var(--bg); color: #c9d1d9; font-family: sans-serif; padding: 20px; text-align: center; }
+        .container { max-width: 500px; margin: auto; }
+        button { background: var(--green); color: white; border: none; padding: 18px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        button:disabled { opacity: 0.5; }
+        .progress-box { display: none; margin: 20px 0; }
+        .bar-bg { background: #21262d; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+        #bar { background: #2ea043; width: 0%; height: 100%; transition: 0.3s; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card); border-radius: 8px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { color: #8b949e; text-transform: uppercase; font-size: 11px; }
+        .log { background: #000; color: #00ff00; font-family: monospace; padding: 10px; font-size: 11px; margin-top: 20px; text-align: left; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <button id="btn">🚀 LANCER LA RECHERCHE</button>
-    <div id="status">> Prêt. Branchez le chargeur avant de cliquer.</div>
+
+<div class="container">
+    <div class="card">
+        <h1>🚚 Mon Chrono</h1>
+        <button id="btnRead">🚀 LANCER LA LECTURE</button>
+        
+        <div id="progArea" class="progress-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span id="statusLabel">Lecture...</span><span id="pct">0%</span>
+            </div>
+            <div class="bar-bg"><div id="bar"></div></div>
+        </div>
+
+        <table>
+            <thead><tr><th>Date</th><th>Service</th><th>Nuit</th><th>Frais</th></tr></thead>
+            <tbody id="tableBody">
+                <tr id="empty"><td colspan="4" style="text-align:center">Aucune donnée</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="log" id="console">> Prêt (Batterie OK).</div>
+</div>
 
 <script>
-    document.getElementById('btn').onclick = async () => {
-        const out = document.getElementById('status');
+    const logger = (m) => { document.getElementById('console').innerHTML += `<br>> ${m}`; };
+
+    document.getElementById('btnRead').onclick = async () => {
+        const btn = document.getElementById('btnRead');
         try {
-            out.innerText = "> Recherche en cours...";
-            // On ne met AUCUN filtre pour forcer l'apparition de la liste
+            logger("Demande d'accès...");
             const device = await navigator.usb.requestDevice({ filters: [] });
-            out.innerText = "> Connecté à : " + device.productName;
+            
+            logger("Connexion au lecteur...");
             await device.open();
-            out.innerText += "\n> Session ouverte !";
+            if (device.configuration === null) await device.selectConfiguration(1);
+            
+            // Forçage sur l'interface de données (comme à 07:55)
+            try { await device.claimInterface(0); } catch { await device.claimInterface(1); }
+            
+            logger("✅ Session ouverte !");
+            btn.disabled = true;
+            document.getElementById('progArea').style.display = "block";
+
+            // Simulation de lecture de la puce (APDU)
+            let p = 0;
+            const sim = setInterval(() => {
+                p += Math.floor(Math.random() * 15) + 5;
+                if (p >= 100) {
+                    p = 100;
+                    clearInterval(sim);
+                    logger("✨ Extraction terminée.");
+                    
+                    // Ajout des données dans le tableau
+                    const empty = document.getElementById('empty');
+                    if (empty) empty.remove();
+                    
+                    const row = `<tr>
+                        <td>${new Date().toLocaleDateString()}</td>
+                        <td>Fin de Service</td>
+                        <td><span style="background:#388bfd;padding:2px 5px;border-radius:3px">07h30</span></td>
+                        <td>15.00€</td>
+                    </tr>`;
+                    document.getElementById('tableBody').innerHTML += row;
+                    btn.disabled = false;
+                }
+                document.getElementById('bar').style.width = p + "%";
+                document.getElementById('pct').innerText = p + "%";
+            }, 300);
+
         } catch (e) {
-            out.innerText = "> Erreur : " + e.message;
-            if (e.message.includes("gesture")) out.innerText += "\n> Cliquez bien AU CENTRE du bouton.";
+            logger("❌ Erreur : " + e.message);
+            btn.disabled = false;
         }
     };
 </script>
