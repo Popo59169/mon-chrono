@@ -2,12 +2,18 @@
   "name": "Mon Chrono Dylan Petit",
   "short_name": "Mon Chrono",
   "description": "Suivi d'activité pour conducteur routier de nuit",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d1117",
   "theme_color": "#ff6b35",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "https://www.gstatic.com/android-pwa/samples/icon-512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "https://www.gstatic.com/android-pwa/samples/icon-512.png",
       "sizes": "512x512",
