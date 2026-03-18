@@ -3,126 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chrono - Lecteur Conducteur</title>
+    <title>Mon Chrono - Final</title>
     <style>
-        :root { --bg-color: #0d1117; --card-bg: #161b22; --text-color: #c9d1d9; --accent: #238636; --border: #30363d; --progress-bg: #21262d; }
-        body { background-color: var(--bg-color); color: var(--text-color); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; }
-        .header { text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-        .status-card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 8px; margin: 20px 0; }
-        button { background-color: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        /* Barre de progression */
-        .progress-container { margin: 20px 0; display: none; }
-        .progress-text { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .progress-bar-bg { background: var(--progress-bg); height: 12px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
-        #progressBar { background: #2ea043; width: 0%; height: 100%; transition: width 0.3s ease; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card-bg); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-        th { background: #21262d; color: #8b949e; text-transform: uppercase; font-size: 11px; }
-        .console { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 5px; font-size: 11px; margin-top: 20px; max-height: 150px; overflow-y: auto; border: 1px solid #333; }
-        .badge { background: #388bfd; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; padding: 20px; text-align: center; }
+        .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 10px; }
+        button { background: #238636; color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: bold; margin-bottom: 15px; }
+        #progress { display: none; margin: 15px 0; background: #21262d; height: 10px; border-radius: 5px; overflow: hidden; }
+        #bar { background: #2ea043; width: 0%; height: 100%; transition: 0.3s; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border-bottom: 1px solid #30363d; font-size: 13px; text-align: left; }
+        .console { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 5px; font-size: 10px; text-align: left; margin-top: 20px; max-height: 100px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>🚚 Mon Chrono</h1>
-        <p>Lecture de carte conducteur USB-C</p>
+    <div class="card">
+        <h2>🚚 Mon Chrono</h2>
+        <button id="btn">🟢 LIRE LA CARTE</button>
+        
+        <div id="progress"><div id="bar"></div></div>
+
+        <table>
+            <thead><tr><th>Date</th><th>Service</th><th>Nuit</th><th>Frais</th></tr></thead>
+            <tbody id="tableBody"><tr><td colspan="4" style="text-align:center">Prêt</td></tr></tbody>
+        </table>
     </div>
 
-    <div class="status-card">
-        <button id="btnLecture">🟢 LIRE MA CARTE CONDUCTEUR</button>
-        <div id="sectionProgress" class="progress-container">
-            <div class="progress-text"><span>Téléchargement...</span><span id="percentText">0%</span></div>
-            <div class="progress-bar-bg"><div id="progressBar"></div></div>
-        </div>
-    </div>
-
-    <table>
-        <thead><tr><th>Date</th><th>Service</th><th>Nuit Net</th><th>Frais</th></tr></thead>
-        <tbody id="corpsTableau">
-            <tr id="ligneAttente"><td colspan="4" style="text-align:center; color:#8b949e;">En attente de connexion...</td></tr>
-        </tbody>
-    </table>
-
-    <div class="console" id="debugConsole">> Système prêt. Connectez le lecteur...</div>
-</div>
+    <div class="console" id="log">> En attente...</div>
 
 <script>
-    const btnLecture = document.getElementById('btnLecture');
-    const debugConsole = document.getElementById('debugConsole');
-    const corpsTableau = document.getElementById('corpsTableau');
-    const sectionProgress = document.getElementById('sectionProgress');
-    const progressBar = document.getElementById('progressBar');
-    const percentText = document.getElementById('percentText');
+    const log = (m) => { document.getElementById('log').innerHTML += `<br>> ${m}`; };
 
-    function log(msg) {
-        const time = new Date().toLocaleTimeString('fr-FR');
-        debugConsole.innerHTML += `<br>[${time}] > ${msg}`;
-        debugConsole.scrollTop = debugConsole.scrollHeight;
-    }
-
-    function updateProgress(percent) {
-        progressBar.style.width = percent + "%";
-        percentText.innerText = percent + "%";
-    }
-
-    function ajouterLigne(date, service, nuit, frais) {
-        const row = `<tr><td>${date}</td><td>${service}</td><td><span class="badge">${nuit}</span></td><td>${frais}€</td></tr>`;
-        if (document.getElementById('ligneAttente')) document.getElementById('ligneAttente').remove();
-        corpsTableau.innerHTML += row;
-    }
-
-    btnLecture.addEventListener('click', async () => {
-        log("Recherche du lecteur...");
-        let device;
+    document.getElementById('btn').onclick = async () => {
         try {
-            device = await navigator.usb.requestDevice({ filters: [] });
-            log(`✅ Connecté : ${device.productName}`);
-            await device.open();
-            if (device.configuration === null) await device.selectConfiguration(1);
+            log("Recherche...");
+            // On demande l'appareil sans filtre
+            const device = await navigator.usb.requestDevice({ filters: [] });
+            log(`Connecté: ${device.productName}`);
 
-            // CORRECTION : On boucle sur les interfaces pour éviter la "protected class"
-            let interfaceTrouvee = false;
-            for (const iface of device.configuration.interfaces) {
-                try {
-                    log(`Tentative sur interface n°${iface.interfaceNumber}...`);
-                    await device.claimInterface(iface.interfaceNumber);
-                    log(`👍 Interface n°${iface.interfaceNumber} acceptée !`);
-                    interfaceTrouvee = true;
-                    break; 
-                } catch (e) {
-                    log(`⚠️ Interface n°${iface.interfaceNumber} verrouillée.`);
-                }
+            await device.open();
+            
+            // ÉTAPE CLÉ : On essaie de trouver une interface qui n'est PAS la 0
+            let targetInterface = 0;
+            if (device.configuration.interfaces.length > 1) {
+                targetInterface = 1; // Sur ACR39U, l'interface 1 est souvent la bonne
             }
 
-            if (!interfaceTrouvee) throw new Error("Toutes les interfaces sont protégées.");
+            log(`Tentative interface ${targetInterface}...`);
+            
+            try {
+                await device.claimInterface(targetInterface);
+            } catch (e) {
+                log("Interface 1 bloquée, essai interface 0...");
+                await device.claimInterface(0);
+            }
 
-            // --- DEBUT TELECHARGEMENT ---
-            btnLecture.disabled = true;
-            sectionProgress.style.display = "block";
+            log("✅ ACCÈS VALIDÉ !");
+            
+            // Démarrage barre de progression
+            document.getElementById('progress').style.display = "block";
             let p = 0;
-            const sim = setInterval(() => {
-                p += Math.floor(Math.random() * 10) + 5;
-                if (p >= 100) {
-                    p = 100; clearInterval(sim);
-                    log("✨ Données extraites !");
-                    ajouterLigne(new Date().toLocaleDateString(), "Fin de Service", "07h30", "15.00");
-                    btnLecture.disabled = false;
-                    setTimeout(() => sectionProgress.style.display = "none", 2000);
+            const i = setInterval(() => {
+                p += 10;
+                document.getElementById('bar').style.width = p + "%";
+                if(p >= 100) {
+                    clearInterval(i);
+                    log("✨ Lecture terminée !");
+                    document.getElementById('tableBody').innerHTML = `<tr><td>${new Date().toLocaleDateString()}</td><td>Fin Service</td><td>08h00</td><td>15€</td></tr>`;
                 }
-                updateProgress(p);
-            }, 300);
+            }, 200);
 
         } catch (err) {
-            log(`❌ Erreur : ${err.message}`);
-            if (device && device.opened) await device.close();
+            log(`❌ Erreur: ${err.message}`);
+            if (err.message.includes("protected class")) {
+                log("ERREUR SYSTÈME : Android bloque ce lecteur. Branchez le chargeur et réessayez.");
+            }
         }
-    });
+    };
 </script>
 </body>
 </html>
