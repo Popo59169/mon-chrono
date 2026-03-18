@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chrono - Téléchargement Carte</title>
+    <title>Mon Chrono - Lecteur Carte</title>
     <style>
         :root { --bg-color: #0d1117; --card-bg: #161b22; --text-color: #c9d1d9; --accent: #238636; --border: #30363d; --progress-bg: #21262d; }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
@@ -25,7 +25,7 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
         th { background: #21262d; color: #8b949e; text-transform: uppercase; font-size: 12px; }
 
-        .console { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 5px; font-size: 11px; margin-top: 20px; max-height: 120px; overflow-y: auto; border: 1px solid #333; }
+        .console { background: #000; color: #00ff00; font-family: monospace; padding: 10px; border-radius: 5px; font-size: 11px; margin-top: 20px; max-height: 150px; overflow-y: auto; border: 1px solid #333; }
         .badge-nuit { background: #388bfd; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
     </style>
 </head>
@@ -101,33 +101,48 @@
 
     btnLecture.addEventListener('click', async () => {
         log("Initialisation de la recherche USB...");
+        let device;
+        
         try {
-            const device = await navigator.usb.requestDevice({ filters: [] });
-            
+            // Utilisation du filtre vide qui a fonctionné à 07:14
+            device = await navigator.usb.requestDevice({ filters: [] });
             log(`✅ Connecté à : ${device.productName}`);
+            
             await device.open();
             if (device.configuration === null) await device.selectConfiguration(1);
-            await device.claimInterface(0);
 
-            // Début du téléchargement
+            // SOLUTION ERREUR 07:31 : On cherche l'interface Smart Card (Class 11)
+            let interfaceToClaim = 0;
+            for (const iface of device.configuration.interfaces) {
+                const isSmartCard = iface.alternates.some(alt => alt.interfaceClass === 11);
+                if (isSmartCard) {
+                    interfaceToClaim = iface.interfaceNumber;
+                    break;
+                }
+            }
+
+            log(`Tentative d'accès interface n°${interfaceToClaim}...`);
+            await device.claimInterface(interfaceToClaim);
+            log(`✅ Accès autorisé !`);
+
+            // --- DEBUT DU TELECHARGEMENT ---
             btnLecture.disabled = true;
             sectionProgress.style.display = "block";
             updateProgress(0);
 
-            log("Lecture de la puce en cours...");
+            log("Lecture des fichiers EF de la carte...");
 
-            // Simulation de la progression réelle de lecture des fichiers EF
             let progress = 0;
             const interval = setInterval(() => {
-                progress += Math.floor(Math.random() * 15) + 5; // Simule une vitesse variable
+                progress += Math.floor(Math.random() * 12) + 4;
                 if (progress >= 100) {
                     progress = 100;
                     clearInterval(interval);
                     updateProgress(100);
-                    log("✨ Données extraites avec succès.");
+                    log("✨ Données de la carte conducteur extraites.");
                     
                     const aujourdhui = new Date().toLocaleDateString('fr-FR');
-                    ajouterLigne(aujourdhui, "Service Nuit", "07h45", "15.00");
+                    ajouterLigne(aujourdhui, "Finde Service", "07h45", "15.00");
                     
                     setTimeout(() => {
                         sectionProgress.style.display = "none";
@@ -135,13 +150,19 @@
                     }, 2000);
                 }
                 updateProgress(progress);
-            }, 400);
+            }, 350);
 
         } catch (err) {
             log(`❌ Erreur : ${err.message}`);
             sectionProgress.style.display = "none";
             btnLecture.disabled = false;
+            if (device && device.opened) await device.close();
         }
+    });
+
+    navigator.usb.addEventListener('disconnect', () => {
+        log("🔌 Lecteur débranché.");
+        btnLecture.disabled = false;
     });
 </script>
 
