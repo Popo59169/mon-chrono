@@ -1,377 +1,54 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Tachy</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff6b35">
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js');
-        });
-      }
-    </script>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connexion USB Mon Chrono</title>
     <style>
-        body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
-        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
-        .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
-        .rest { background: #1e293b; color: #475569; }
-        .conge { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; color: white !important; }
-        .empty { visibility: hidden; }
-        .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #ff6b35; padding-bottom: 8px; font-style: italic; }
-        
-        .color-conduite { background: #22c55e; height: 100%; }
-        .color-travail { background: #eab308; height: 100%; }
-        .color-repos { background: #ef4444; height: 100%; } 
-
-        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
-        .sidebar.open { transform: translateX(0); }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
-        .tab-active { background: #ff6b35 !important; color: white !important; }
-        .hidden { display: none !important; }
-        
-        .timeline-item { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 15px; position: relative; padding-bottom: 15px; }
-        .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
+        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        button { background: #28a745; color: white; border: none; padding: 15px 25px; border-radius: 5px; font-size: 18px; cursor: pointer; }
+        #log { margin-top: 20px; padding: 10px; border: 1px solid #444; text-align: left; background: #000; font-family: monospace; }
     </style>
 </head>
-<body onload="initApp()"> 
+<body>
 
-    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div> 
+    <h2>Diagnostic USB-C</h2>
+    <p>Branchez le lecteur et appuyez sur le bouton ci-dessous.</p>
+    
+    <button id="btnConnect">TESTER LA CONNEXION</button>
 
-    <div id="sidebar" class="sidebar p-6">
-        <h2 class="text-orange-500 font-black italic uppercase text-2xl mb-10">Menu</h2>
-        <nav class="flex flex-col gap-3">
-            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📊 Dashboard</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">🚛 Activités</button>
-            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">💰 Frais & Primes</button>
-            <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📥 Importation</button>
-            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-slate-400 border-t border-white/10 mt-4 text-sm">⚙️ Paramètres</button>
-        </nav>
-    </div> 
-
-    <header class="p-6 flex flex-col gap-4 sticky top-0 bg-[#0d1117] z-50">
-        <div class="flex items-center gap-4">
-            <div onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
-            <div>
-                <h1 class="text-xl font-black italic uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan Petit — Conducteur de Nuit</p>
-            </div>
-        </div>
-        <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
-            <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
-            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">---</span>
-            <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
-        </div>
-    </header> 
-
-    <main class="px-6 pb-10">
-        <div id="view-dashboard" class="page-view">
-            <div class="glass-card p-4 mb-6 border-b-4 border-orange-500 flex justify-around items-center">
-                <div class="text-center">
-                    <p id="labelAnnee" class="text-[8px] font-black text-slate-500 uppercase italic">Année 2026</p>
-                    <p id="countTravailAnnuel" class="text-2xl font-black italic text-orange-500">0</p>
-                    <p class="text-[8px] font-bold text-white uppercase">Jours travaillés</p>
-                </div>
-                <div class="w-[1px] h-10 bg-white/10"></div>
-                <div class="text-center">
-                    <p class="text-[8px] font-black text-slate-500 uppercase italic">Compteur</p>
-                    <p id="countCongeAnnuel" class="text-2xl font-black italic text-blue-400">0</p>
-                    <p class="text-[8px] font-bold text-white uppercase">Jours Congés</p>
-                </div>
-            </div> 
-
-            <div class="flex gap-2 mb-6">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tachygraphe</button>
-            </div> 
-
-            <div id="sec-cal" class="space-y-4">
-                <div class="glass-card p-5">
-                    <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
-                    <div id="grid" class="grid grid-cols-7 gap-2"></div>
-                </div>
-            </div> 
-
-            <div id="sec-tachy" class="hidden space-y-4">
-                <div class="glass-card overflow-hidden">
-                    <table class="w-full text-[10px] text-left border-collapse">
-                        <thead class="bg-white/10 text-orange-500 font-black uppercase italic">
-                            <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
-                        </thead>
-                        <tbody id="bodyTachy"></tbody>
-                        <tfoot class="bg-orange-500/20 font-black italic text-white border-t border-white/20">
-                            <tr><td class="p-3">TOTAUX</td><td id="totalService" class="p-3 text-orange-500">0h</td><td id="totalNuit" class="p-3 text-blue-400">0h</td><td id="totalFraisTachy" class="p-3 text-emerald-400">0€</td></tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div> 
-
-        <div id="view-activities" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
-            <div id="activitiesList" class="space-y-6"></div>
-        </div> 
-
-        <div id="view-frais" class="page-view hidden space-y-6">
-            <div class="glass-card p-5 border-l-4 border-emerald-500 flex justify-between items-center mb-4">
-                <div>
-                    <p id="payrollPeriod" class="text-[9px] font-black text-slate-500 uppercase italic mb-1">---</p>
-                    <p class="text-[10px] font-bold uppercase text-white">Estimation Paie (Frais + Primes)</p>
-                </div>
-                <div class="text-right">
-                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-400">0.00€</p>
-                    <p id="detailPayroll" class="text-[8px] font-bold text-slate-400 uppercase">---</p>
-                </div>
-            </div>
-            <div id="fraisList" class="space-y-4"></div>
-        </div> 
-
-        <div id="view-import" class="page-view hidden space-y-6">
-            <div class="glass-card p-6 border-l-4 border-blue-500">
-                <h3 class="text-[10px] font-black uppercase italic text-white mb-4">Gestion des données</h3>
-                
-                <button onclick="lireCarteDirectement()" class="w-full mb-4 bg-emerald-600 p-6 rounded-2xl font-black italic shadow-lg active:scale-95 text-xs">
-                    🔌 LIRE MA CARTE (USB DIRECT)
-                </button>
-
-                <div class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30 cursor-pointer" onclick="document.getElementById('fileInput').click()">
-                    <span class="text-3xl mb-2">📥</span>
-                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Ou Importer un fichier CSV (Cumul)</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
-                </div>
-                
-                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-500/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic hover:bg-red-500/10 transition">🗑️ Tout effacer</button>
-            </div>
-        </div> 
-
-        <div id="view-settings" class="page-view hidden space-y-6">
-            <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Enregistrer</button>
-            </div>
-        </div>
-    </main> 
-
-    <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
-        <div class="absolute inset-0 bg-black/80" onclick="closeModal()"></div>
-        <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
-            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-white"></h3>
-            <div id="modalBody"></div>
-            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white">Fermer</button>
-        </div>
-    </div> 
+    <div id="log">Attente d'action...</div>
 
     <script>
-        // LOGIQUE CONSOLE VISUELLE
-        console.log = function(msg) {
-            let debug = document.getElementById('debug-box');
-            if(!debug) {
-                debug = document.createElement('div');
-                debug.id = 'debug-box';
-                debug.style = "position:fixed; bottom:70px; left:5%; width:90%; height:60px; background:rgba(0,0,0,0.9); color:#00ff88; font-size:9px; padding:10px; border-radius:10px; overflow-y:auto; z-index:1000; border:1px solid #00ff88;";
-                document.body.appendChild(debug);
-            }
-            debug.innerHTML += "> " + msg + "<br>";
-            debug.scrollTop = debug.scrollHeight;
-        };
+        const logDiv = document.getElementById('log');
 
-        let now = new Date();
-        let curM = now.getMonth(); 
-        let curY = now.getFullYear();
-        let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { repas: 9.81, prime: 40.00 };
-        let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
-        const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]; 
-
-        function estJourFerie(date) {
-            const joursFeries = ["01/01", "13/04", "01/05", "08/05", "21/05", "01/06", "14/07", "15/08", "01/11", "11/11", "25/12"];
-            const d = String(date.getDate()).padStart(2, '0');
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            return joursFeries.includes(`${d}/${m}`);
-        } 
-
-        function sauvegarderActivites(newActivities) {
-            let existingPostes = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
-            const newPostes = {};
-            let currentPosteDate = null;
-
-            newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
-                if (act.type !== 'repos') {
-                    if (!currentPosteDate) { currentPosteDate = act.date; newPostes[currentPosteDate] = []; }
-                    newPostes[currentPosteDate].push(act);
-                } else if (act.dureeMinutes > 420) { currentPosteDate = null; }
-                else if (currentPosteDate) { newPostes[currentPosteDate].push(act); }
-            });
-
-            const mergedData = { ...existingPostes, ...newPostes };
-            localStorage.setItem('monChrono_data_csv', JSON.stringify(mergedData));
-            initApp();
-            navTo('dashboard');
+        function printLog(msg) {
+            logDiv.innerHTML += "<br>> " + msg;
+            console.log(msg);
         }
 
-        function handleFileSelect(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const rows = text.split('\n');
-                let newActivities = [];
-                rows.forEach(row => {
-                    const cols = row.replace(/"/g, '').split(';');
-                    if (cols.length < 5) return;
-                    const dtParts = cols[0].trim().split(' ');
-                    if(dtParts.length < 2) return;
-                    const dateStr = dtParts[0];
-                    const [j, m, a] = dateStr.split('/').map(Number);
-                    const [hh, mm] = dtParts[1].split(':').map(Number);
-                    const timestamp = new Date(a, m - 1, j, hh, mm).getTime();
-                    const duree = cols[4];
-                    if (cols[2].includes("Card") || !duree.includes(":")) return;
-                    newActivities.push({
-                        timestamp, date: dateStr, 
-                        heure: dtParts[1].substring(0,5),
-                        type: cols[2].toLowerCase().includes('repos') ? 'repos' : (cols[2].toLowerCase().includes('conduite') ? 'conduite' : 'travail'),
-                        label: cols[2],
-                        dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
-                    });
-                });
-                sauvegarderActivites(newActivities);
-                alert("Importation réussie !");
-            };
-            reader.readAsText(file);
-        } 
+        document.getElementById('btnConnect').addEventListener('click', async () => {
+            printLog("Recherche d'appareil (SANS FILTRE)...");
 
-        function clearAllData() {
-            if(confirm("Tout supprimer ?")) {
-                localStorage.removeItem('monChrono_data_csv');
-                localStorage.removeItem('monChrono_conges');
-                listeConges = [];
-                initApp();
-            }
-        } 
+            try {
+                // TEST CRUCIAL : On enlève le filtre vendorId pour tout voir
+                const device = await navigator.usb.requestDevice({ filters: [] });
 
-        function toggleConge(dateStr) {
-            if (listeConges.includes(dateStr)) {
-                listeConges = listeConges.filter(d => d !== dateStr);
-            } else {
-                listeConges.push(dateStr);
-            }
-            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
-            initApp();
-        } 
+                printLog("✅ APPAREIL TROUVÉ !");
+                printLog("Nom : " + device.productName);
+                printLog("Fabricant : " + device.manufacturerName);
+                printLog("Vendor ID : " + device.vendorId);
+                
+                alert("Connexion réussie avec : " + device.productName);
 
-        function calculerMinutesNuit(timestampDebut, minutesDuree) {
-            let minutesNuit = 0;
-            let current = new Date(timestampDebut);
-            for (let i = 0; i < minutesDuree; i++) {
-                const h = current.getHours();
-                if (h >= 21 || h < 6) minutesNuit++;
-                current.setMinutes(current.getMinutes() + 1);
-            }
-            return minutesNuit;
-        } 
-
-        function initApp() {
-            document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
-            document.getElementById('labelAnnee').innerText = "Année " + curY;
-            
-            const dataCSV = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
-            const grid = document.getElementById('grid');
-            const tBody = document.getElementById('bodyTachy');
-            const fList = document.getElementById('fraisList');
-            const actList = document.getElementById('activitiesList');
-            
-            grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
-            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
-            
-            let firstDay = new Date(curY, curM, 1).getDay();
-            let shift = (firstDay === 0) ? 6 : firstDay - 1;
-            for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`; 
-
-            let sumFraisPaie = 0, sumPrimesMois = 0, totalServiceMois = 0, totalNuitMois = 0, totalFraisTachy = 0;
-            let countTravailAnnuel = 0, countCongeAnnuel = 0; 
-
-            Object.keys(dataCSV).forEach(dateStr => {
-                const [d, m, y] = dateStr.split('/').map(Number);
-                if (y === curY) countTravailAnnuel++;
-            });
-            listeConges.forEach(dateStr => {
-                const [d, m, y] = dateStr.split('/').map(Number);
-                if (y === curY) countCongeAnnuel++;
-            });
-            document.getElementById('countTravailAnnuel').innerText = countTravailAnnuel;
-            document.getElementById('countCongeAnnuel').innerText = countCongeAnnuel; 
-
-            const daysInMonth = new Date(curY, curM + 1, 0).getDate();
-            for(let d=1; d<=daysInMonth; d++) {
-                const dFormatted = `${String(d).padStart(2, '0')}/${String(curM + 1).padStart(2, '0')}/${curY}`;
-                const poste = dataCSV[dFormatted];
-                const isConge = listeConges.includes(dFormatted); 
-
-                if(poste) {
-                    let sJ = 0, nJ = 0;
-                    poste.forEach(a => { if(a.type!=='repos'){ sJ+=a.dureeMinutes; nJ+=calculerMinutesNuit(a.timestamp, a.dureeMinutes); } });
-                    totalServiceMois += sJ; totalNuitMois += nJ;
-                    let fraisJ = (sJ > 240) ? tarifs.repas : 0;
-                    totalFraisTachy += fraisJ;
-                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${sJ%60}','${Math.floor(nJ/60)}h${nJ%60}')">${d}</div>`;
-                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${Math.floor(sJ/60)}h${sJ%60}</td><td class="p-3 text-blue-400 font-black">${Math.floor(nJ/60)}h${nJ%60}</td><td class="p-3 text-emerald-400 font-black">${fraisJ.toFixed(2)}€</td></tr>`;
-                    
-                    const row = document.createElement('div');
-                    row.className = "space-y-2 cursor-pointer";
-                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${dFormatted}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${sJ%60}</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
-                    row.onclick = () => showTimelineFromData(d, poste);
-                    actList.appendChild(row);
-                } else {
-                    grid.innerHTML += `<div class="day-box rest ${isConge ? 'conge' : ''}" onclick="toggleConge('${dFormatted}')">${d}</div>`;
+            } catch (err) {
+                printLog("❌ ERREUR : " + err.message);
+                if (err.message.includes("No device selected")) {
+                    printLog("L'utilisateur a annulé ou la liste était vide.");
                 }
-            } 
-
-            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + (totalServiceMois%60);
-            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + (totalNuitMois%60);
-            document.getElementById('totalFraisTachy').innerText = totalFraisTachy.toFixed(2) + "€";
-        } 
-
-        function navTo(id) {
-            document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
-            document.getElementById('view-' + id).classList.remove('hidden');
-            toggleSidebar(false);
-        }
-        function toggleSidebar(f) { 
-            const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); 
-            if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; }
-            s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; 
-        }
-        function setTab(t) { 
-            document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); 
-            document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); 
-            document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); 
-            document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); 
-        }
-        function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
-        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-        function showHeures(d, s, n) {
-            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM];
-            document.getElementById('modalBody').innerHTML = `<p class="text-white font-black">Service: ${s}</p><p class="text-blue-400 font-black">Nuit: ${n}</p>`;
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
-        function showTimelineFromData(d, segments) {
-            document.getElementById('modalDate').innerText = "Détail du " + d;
-            let html = '<div class="space-y-3">';
-            segments.forEach(x => { 
-                const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black text-white">${Math.floor(x.dureeMinutes/60)}h${x.dureeMinutes%60}</p></div>`; 
-            });
-            document.getElementById('modalBody').innerHTML = html + '</div>';
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
+                printLog("Vérifiez que l'USB n'est pas en mode 'Charge seule'");
+            }
+        });
     </script>
-    <script src="tacho.js"></script>
 </body>
 </html>
