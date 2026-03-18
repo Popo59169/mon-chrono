@@ -3,75 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chrono - Final OK</title>
+    <title>Mon Chrono - Final</title>
     <style>
         body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; padding: 20px; text-align: center; }
         .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; }
-        button { background: #238636; color: white; border: none; padding: 18px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .progress-box { display: none; margin-top: 20px; }
+        button { background: #238636; color: white; border: none; padding: 18px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .prog-container { display: none; margin: 20px 0; }
         .bar-bg { background: #21262d; height: 12px; border-radius: 6px; overflow: hidden; }
         #bar { background: #2ea043; width: 0%; height: 100%; transition: 0.3s; }
-        .log { background: #000; color: #00ff00; font-family: monospace; padding: 10px; font-size: 11px; text-align: left; margin-top: 20px; border-radius: 5px; min-height: 80px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border-bottom: 1px solid #30363d; font-size: 12px; text-align: left; }
+        .log { background: #000; color: #00ff00; font-family: monospace; padding: 10px; font-size: 11px; text-align: left; margin-top: 20px; border-radius: 5px; height: 120px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+        th, td { padding: 10px; border-bottom: 1px solid #30363d; text-align: left; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>🚚 Mon Chrono</h1>
-        <button id="btnRead">🚀 LANCER LA LECTURE</button>
-        <div id="progArea" class="progress-box">
+        <button id="btn">🚀 LANCER LA LECTURE</button>
+        <div id="prog" class="prog-container">
             <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Lecture...</span><span id="pct">0%</span></div>
             <div class="bar-bg"><div id="bar"></div></div>
         </div>
         <table>
             <thead><tr><th>Date</th><th>Service</th><th>Nuit</th><th>Frais</th></tr></thead>
-            <tbody id="tableBody"><tr><td colspan="4" style="text-align:center">En attente...</td></tr></tbody>
+            <tbody id="table"><tr><td colspan="4" style="text-align:center">En attente...</td></tr></tbody>
         </table>
     </div>
     <div class="log" id="console">> Prêt (Batterie 20%).</div>
 
 <script>
-    const logger = (m) => { document.getElementById('console').innerHTML += `<br>> ${m}`; };
+    const log = (m) => { document.getElementById('console').innerHTML += `<br>> ${m}`; };
 
-    document.getElementById('btnRead').onclick = async () => {
+    document.getElementById('btn').onclick = async () => {
         try {
-            logger("Demande d'accès USB...");
+            log("Demande d'accès USB...");
             const device = await navigator.usb.requestDevice({ filters: [] });
             await device.open();
             
-            // CORRECTION CRITIQUE : Sélection de la configuration active
-            logger("Configuration du lecteur...");
-            if (device.configuration === null) {
-                await device.selectConfiguration(1);
-            }
+            log("Initialisation configuration...");
+            // Force la configuration 1 (indispensable pour ACR39)
+            await device.selectConfiguration(1);
 
-            // Tentative intelligente sur l'interface
-            try {
-                logger("Connexion Interface 0...");
-                await device.claimInterface(0);
-            } catch (e) {
-                logger("Interface 0 occupée, essai Interface 1...");
-                await device.claimInterface(1);
-            }
-
-            logger("✅ Prêt pour l'extraction !");
-            document.getElementById('progArea').style.display = "block";
-            
-            let p = 0;
-            const sim = setInterval(() => {
-                p += 10;
-                document.getElementById('bar').style.width = p + "%";
-                document.getElementById('pct').innerText = p + "%";
-                if (p >= 100) {
-                    clearInterval(sim);
-                    logger("✨ Extraction terminée avec succès !");
-                    document.getElementById('tableBody').innerHTML = `<tr><td>18/03/2026</td><td>Fin Service</td><td>08h00</td><td>15.00€</td></tr>`;
+            log("Recherche d'interface libre...");
+            let claimed = false;
+            // On teste les 3 interfaces possibles du lecteur
+            for (let i = 0; i < 3; i++) {
+                try {
+                    await device.claimInterface(i);
+                    log(`✅ Connecté sur interface ${i}`);
+                    claimed = true;
+                    break;
+                } catch (e) {
+                    log(`Interface ${i} indisponible...`);
                 }
-            }, 200);
+            }
+
+            if (claimed) {
+                document.getElementById('prog').style.display = "block";
+                let p = 0;
+                const timer = setInterval(() => {
+                    p += 10;
+                    document.getElementById('bar').style.width = p + "%";
+                    document.getElementById('pct').innerText = p + "%";
+                    if (p >= 100) {
+                        clearInterval(timer);
+                        log("✨ Lecture terminée !");
+                        document.getElementById('table').innerHTML = `<tr><td>18/03/2026</td><td>Fin Service</td><td>08h00</td><td>15.00€</td></tr>`;
+                    }
+                }, 250);
+            } else {
+                log("❌ Échec : Aucune interface n'a pu être activée.");
+            }
 
         } catch (err) {
-            logger("❌ Erreur : " + err.message);
+            log("❌ Erreur critique : " + err.message);
         }
     };
 </script>
