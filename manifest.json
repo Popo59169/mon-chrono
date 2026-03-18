@@ -1,6 +1,6 @@
 {
-  "name": "Mon Chrono Dylan Petit",
-  "short_name": "Mon Chrono",
+  "name": "Tachy",
+  "short_name": "Tachy",
   "description": "Suivi d'activité pour conducteur routier de nuit",
   "start_url": "./index.html",
   "display": "standalone",
@@ -26,5 +26,7 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "lang": "fr",
+  "id": "Tachy"
 }
