@@ -1,3 +1,17 @@
+// Console de secours sur l'écran
+window.onerror = function(msg) {
+    alert("Erreur détectée : " + msg);
+};
+console.log = function(msg) {
+    let debug = document.getElementById('debug-box');
+    if(!debug) {
+        debug = document.createElement('div');
+        debug.id = 'debug-box';
+        debug.style = "position:fixed; bottom:0; left:0; width:100%; height:100px; background:black; color:lime; font-size:8px; overflow:y-scroll; z-index:9999; padding:5px; opacity:0.8;";
+        document.body.appendChild(debug);
+    }
+    debug.innerHTML += "> " + msg + "<br>";
+};
 <!DOCTYPE html>
 <html lang="fr">
 <head>
