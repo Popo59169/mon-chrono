@@ -3,67 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Chrono - SOS</title>
+    <title>Test Rapide</title>
     <style>
         body { background: #0d1117; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 10px; }
-        button { background: #238636; color: white; border: none; padding: 18px; width: 100%; border-radius: 6px; font-weight: bold; }
-        #progress { display: none; background: #21262d; height: 10px; margin: 20px 0; border-radius: 5px; overflow: hidden; }
-        #bar { background: #2ea043; width: 0%; height: 100%; transition: 0.4s; }
-        .log { background: #000; color: #00ff00; font-family: monospace; padding: 10px; font-size: 10px; text-align: left; margin-top: 20px; border: 1px solid #333; }
+        button { background: #238636; color: white; border: none; padding: 20px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 18px; }
+        #status { margin-top: 20px; color: #00ff00; font-family: monospace; font-size: 12px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🚚 Mon Chrono</h2>
-        <button id="btn">🚀 TESTER LE FORÇAGE</button>
-        <div id="progress"><div id="bar"></div></div>
-    </div>
-    <div class="log" id="console">> Prêt pour le forçage...</div>
+    <button id="btn">🚀 LANCER LA RECHERCHE</button>
+    <div id="status">> Prêt. Branchez le chargeur avant de cliquer.</div>
 
 <script>
-    const logger = (m) => { document.getElementById('console').innerHTML += `<br>> ${m}`; };
-
     document.getElementById('btn').onclick = async () => {
+        const out = document.getElementById('status');
         try {
-            // ÉTAPE 1 : On demande l'appareil
+            out.innerText = "> Recherche en cours...";
+            // On ne met AUCUN filtre pour forcer l'apparition de la liste
             const device = await navigator.usb.requestDevice({ filters: [] });
-            logger(`Connecté : ${device.productName}`);
-
+            out.innerText = "> Connecté à : " + device.productName;
             await device.open();
-            
-            // ÉTAPE 2 : On essaie de réinitialiser le lecteur pour casser le verrou
-            logger("Tentative de réinitialisation...");
-            await device.reset(); 
-
-            // ÉTAPE 3 : On essaie de claim TOUTES les interfaces possibles (0 à 5)
-            let interfaceOk = false;
-            for (let i = 0; i < 5; i++) {
-                try {
-                    logger(`Essai interface n°${i}...`);
-                    await device.claimInterface(i);
-                    logger(`✅ REUSSITE sur n°${i} !`);
-                    interfaceOk = true;
-                    break;
-                } catch (e) {
-                    logger(`❌ Bloqué sur n°${i}`);
-                }
-            }
-
-            if (interfaceOk) {
-                document.getElementById('progress').style.display = "block";
-                let p = 0;
-                const timer = setInterval(() => {
-                    p += 10;
-                    document.getElementById('bar').style.width = p + "%";
-                    if(p >= 100) { clearInterval(timer); logger("✨ Lecture forcée réussie !"); }
-                }, 200);
-            } else {
-                logger("😭 Android bloque tout. Essayez de BRANCHER LE CHARGEUR.");
-            }
-
-        } catch (err) {
-            logger("Erreur fatale : " + err.message);
+            out.innerText += "\n> Session ouverte !";
+        } catch (e) {
+            out.innerText = "> Erreur : " + e.message;
+            if (e.message.includes("gesture")) out.innerText += "\n> Cliquez bien AU CENTRE du bouton.";
         }
     };
 </script>
