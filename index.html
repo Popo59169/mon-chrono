@@ -104,7 +104,7 @@
                         </thead>
                         <tbody id="bodyTachy"></tbody>
                         <tfoot class="bg-orange-500/20 font-black italic text-white border-t border-white/20">
-                            <tr><td class="p-3">TOTAUX</td><td id="totalService" class="p-3 text-orange-500">0h</td><td id="totalNuit" class="p-3 text-blue-400">0h</td><td id="totalFraisTachy" class="p-3 text-emerald-400">0€</td></tr>
+                            <tr><td class="p-3">TOTAUX</td><td id="totalService" class="p-3 text-orange-500">0h00</td><td id="totalNuit" class="p-3 text-blue-400">0h00</td><td id="totalFraisTachy" class="p-3 text-emerald-400">0.00€</td></tr>
                         </tfoot>
                     </table>
                 </div>
@@ -144,7 +144,9 @@
 
         <div id="view-settings" class="page-view hidden space-y-6">
             <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique</span><input type="number" id="valRepas" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Casse-croûte (< 5h)</span><input type="number" id="valCasseCroute" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
                 <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
                 <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Enregistrer</button>
             </div>
@@ -164,15 +166,64 @@
         let now = new Date();
         let curM = now.getMonth(); 
         let curY = now.getFullYear();
-        let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { repas: 9.81, prime: 40.00 };
+        
+        let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { 
+            casseCroute: 8.87, 
+            repasNuit: 9.81, 
+            repasStandard: 16.36, 
+            prime: 40.00 
+        };
+        
         let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
+        // Formatage pour deux chiffres (01, 02, etc.)
+        function p2(n) { return String(n).padStart(2, '0'); }
+
         function estJourFerie(date) {
             const joursFeries = ["01/01", "13/04", "01/05", "08/05", "21/05", "01/06", "14/07", "15/08", "01/11", "11/11", "25/12"];
-            const d = String(date.getDate()).padStart(2, '0');
-            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = p2(date.getDate());
+            const m = p2(date.getMonth() + 1);
             return joursFeries.includes(`${d}/${m}`);
+        }
+
+        function verifieCouverture(ts, duree, h1, m1, h2, m2) {
+            let debut = new Date(ts);
+            let fin = new Date(ts + duree * 60000);
+            let p1 = new Date(ts); p1.setHours(h1, m1, 0);
+            let p2 = new Date(ts); p2.setHours(h2, m2, 0);
+            return (debut <= p1 && fin >= p2);
+        }
+
+        function calculerMinutesDansPlage(ts, duree, startH, endH) {
+            let mins = 0;
+            let d = new Date(ts);
+            for (let i = 0; i < duree; i++) {
+                let h = d.getHours();
+                if (startH > endH) { if (h >= startH || h < endH) mins++; }
+                else { if (h >= startH && h < endH) mins++; }
+                d.setMinutes(d.getMinutes() + 1);
+            }
+            return mins;
+        }
+
+        function determinerFraisAutomatique(poste) {
+            if (!poste || poste.length === 0) return { label: "N/A", montant: 0 };
+            const hDebut = parseInt(poste[0].heure.split(':')[0]);
+            let couvreMidi = false, couvreSoir = false, travailNuitMins = 0;
+
+            poste.forEach(a => {
+                if (a.type !== 'repos') {
+                    travailNuitMins += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 22, 7);
+                    if (verifieCouverture(a.timestamp, a.dureeMinutes, 11, 45, 14, 15)) couvreMidi = true;
+                    if (verifieCouverture(a.timestamp, a.dureeMinutes, 18, 45, 21, 15)) couvreSoir = true;
+                }
+            });
+
+            if (couvreMidi || couvreSoir) return { label: "Repas", montant: tarifs.repasStandard };
+            if (travailNuitMins >= 240) return { label: "Repas Unique Nuit", montant: tarifs.repasNuit };
+            if (hDebut < 5) return { label: "Casse-croûte", montant: tarifs.casseCroute };
+            return { label: "Aucun", montant: 0 };
         }
 
         function handleFileSelect(input) {
@@ -240,21 +291,15 @@
             initApp();
         }
 
-        function calculerMinutesNuit(timestampDebut, minutesDuree) {
-            let minutesNuit = 0;
-            let current = new Date(timestampDebut);
-            for (let i = 0; i < minutesDuree; i++) {
-                const h = current.getHours();
-                if (h >= 21 || h < 6) minutesNuit++;
-                current.setMinutes(current.getMinutes() + 1);
-            }
-            return minutesNuit;
-        }
-
         function initApp() {
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
             document.getElementById('labelAnnee').innerText = "Année " + curY;
             
+            document.getElementById('valCasseCroute').value = tarifs.casseCroute;
+            document.getElementById('valRepasNuit').value = tarifs.repasNuit;
+            document.getElementById('valRepasStandard').value = tarifs.repasStandard;
+            document.getElementById('valPrime').value = tarifs.prime;
+
             const dataCSV = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
             const grid = document.getElementById('grid');
             const tBody = document.getElementById('bodyTachy');
@@ -271,7 +316,6 @@
             let sumFraisPaie = 0, sumPrimesMois = 0, totalServiceMois = 0, totalNuitMois = 0, totalFraisTachy = 0;
             let countTravailAnnuel = 0, countCongeAnnuel = 0;
 
-            // --- CALCULS ANNUELS ---
             Object.keys(dataCSV).forEach(dateStr => {
                 const [d, m, y] = dateStr.split('/').map(Number);
                 if (y === curY) countTravailAnnuel++;
@@ -283,66 +327,53 @@
             document.getElementById('countTravailAnnuel').innerText = countTravailAnnuel;
             document.getElementById('countCongeAnnuel').innerText = countCongeAnnuel;
 
-            // --- REMPLISSAGE MOIS ---
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             for(let d=1; d<=daysInMonth; d++) {
-                const dFormatted = `${String(d).padStart(2, '0')}/${String(curM + 1).padStart(2, '0')}/${curY}`;
-                const poste = dataCSV[dFormatted];
+                // Formatage de la date affichée (01/03/2026)
+                const dFormatted = `${p2(d)}/${p2(curM + 1)}/${curY}`;
+                // Pour chercher dans la base, on garde le format stocké par l'import (souvent J/M/Y sans 0 devant)
+                const searchKey = `${d}/${curM + 1}/${curY}`;
+                const poste = dataCSV[searchKey] || dataCSV[dFormatted];
                 const isConge = listeConges.includes(dFormatted);
 
                 if(poste) {
                     let sJ = 0, nJ = 0;
-                    poste.forEach(a => { if(a.type!=='repos'){ sJ+=a.dureeMinutes; nJ+=calculerMinutesNuit(a.timestamp, a.dureeMinutes); } });
+                    poste.forEach(a => { if(a.type!=='repos'){ sJ+=a.dureeMinutes; nJ+=calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
                     totalServiceMois += sJ; totalNuitMois += nJ;
-                    let fraisJ = (sJ > 240) ? tarifs.repas : 0;
-                    totalFraisTachy += fraisJ;
-                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${sJ%60}','${Math.floor(nJ/60)}h${nJ%60}')">${d}</div>`;
-                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${d}/${curM+1}</td><td class="p-3 text-white font-black">${Math.floor(sJ/60)}h${sJ%60}</td><td class="p-3 text-blue-400 font-black">${Math.floor(nJ/60)}h${nJ%60}</td><td class="p-3 text-emerald-400 font-black">${fraisJ.toFixed(2)}€</td></tr>`;
+                    
+                    const calculFrais = determinerFraisAutomatique(poste);
+                    totalFraisTachy += calculFrais.montant;
+
+                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${p2(sJ%60)}','${Math.floor(nJ/60)}h${p2(nJ%60)}')">${d}</div>`;
+                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${p2(d)}/${p2(curM+1)}</td><td class="p-3 text-white font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td><td class="p-3 text-blue-400 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td><td class="p-3 text-emerald-400 font-black">${calculFrais.montant > 0 ? calculFrais.montant.toFixed(2) + '€' : '-'}</td></tr>`;
                     
                     const row = document.createElement('div');
                     row.className = "space-y-2 cursor-pointer";
-                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${dFormatted}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${sJ%60}</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
+                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${dFormatted}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${p2(sJ%60)}</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
                     row.onclick = () => showTimelineFromData(d, poste);
                     actList.appendChild(row);
+
+                    const dtDep = new Date(curY, curM, d);
+                    if (dtDep.getDay() === 0 || estJourFerie(dtDep)) {
+                        sumPrimesMois += tarifs.prime;
+                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">${dFormatted}</p><p class="text-xs font-bold text-white italic">Prime Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${tarifs.prime.toFixed(2)}€</p></div>`;
+                    }
+                    if (calculFrais.montant > 0) {
+                        sumFraisPaie += calculFrais.montant;
+                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">${dFormatted}</p><p class="text-xs font-bold text-white italic">${calculFrais.label}</p></div><p class="text-xl font-black text-white">${calculFrais.montant.toFixed(2)}€</p></div>`;
+                    }
                 } else {
                     grid.innerHTML += `<div class="day-box rest ${isConge ? 'conge' : ''}" onclick="toggleConge('${dFormatted}')">${d}</div>`;
                 }
             }
 
-            // LOGIQUE FRAIS & PRIMES
-            Object.keys(dataCSV).forEach(dateStr => {
-                const [d, m, y] = dateStr.split('/').map(Number);
-                const dateDepart = new Date(y, m-1, d);
-                const poste = dataCSV[dateStr];
-                let serviceMins = 0;
-                poste.forEach(a => { if(a.type!=='repos') serviceMins += a.dureeMinutes; });
-                if (serviceMins > 0) {
-                    if (dateDepart.getMonth() === curM && dateDepart.getFullYear() === curY) {
-                        if (dateDepart.getDay() === 0 || estJourFerie(dateDepart)) {
-                            sumPrimesMois += tarifs.prime;
-                            fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">${dateStr}</p><p class="text-xs font-bold text-white italic">Prime Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${tarifs.prime}€</p></div>`;
-                        }
-                    }
-                    if (serviceMins > 240) {
-                        const hDep = parseInt(poste[0].heure.split(':')[0]);
-                        let dateComptable = new Date(dateDepart);
-                        if (hDep >= 18) dateComptable.setDate(dateDepart.getDate() + 1);
-                        if (dateComptable >= new Date(curY, curM, 15) && dateComptable <= new Date(curY, curM+1, 14)) {
-                            sumFraisPaie += tarifs.repas;
-                            fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">Départ ${dateStr}</p><p class="text-xs font-bold text-white italic">Repas Nuit (Bascule)</p></div><p class="text-xl font-black text-white">${tarifs.repas}€</p></div>`;
-                        }
-                    }
-                }
-            });
-
-            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + (totalServiceMois%60);
-            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + (totalNuitMois%60);
+            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + p2(totalServiceMois%60);
+            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + p2(totalNuitMois%60);
             document.getElementById('totalFraisTachy').innerText = totalFraisTachy.toFixed(2) + "€";
             document.getElementById('totalPayroll').innerText = (sumFraisPaie + sumPrimesMois).toFixed(2) + "€";
             document.getElementById('detailPayroll').innerText = `Frais: ${sumFraisPaie.toFixed(2)}€ | Primes: ${sumPrimesMois.toFixed(2)}€`;
         }
 
-        // FONCTIONS NAVIGATION ET MODALES
         function navTo(id) {
             document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + id).classList.remove('hidden');
@@ -361,23 +392,29 @@
         }
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
         function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
+        
         function saveSettings() { 
-            tarifs.repas = parseFloat(document.getElementById('valRepas').value); 
-            tarifs.prime = parseFloat(document.getElementById('valPrime').value); 
+            tarifs.casseCroute = parseFloat(document.getElementById('valCasseCroute').value);
+            tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value);
+            tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value);
+            tarifs.prime = parseFloat(document.getElementById('valPrime').value);
+            
             localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
-            initApp(); alert("Enregistré"); 
+            initApp(); 
+            alert("Enregistré"); 
         }
+
         function showHeures(d, s, n) {
-            document.getElementById('modalDate').innerText = d + " " + moisNoms[curM];
+            document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM];
             document.getElementById('modalBody').innerHTML = `<p class="text-white font-black">Service: ${s}</p><p class="text-blue-400 font-black">Nuit: ${n}</p>`;
             document.getElementById('dayModal').classList.remove('hidden');
         }
         function showTimelineFromData(d, segments) {
-            document.getElementById('modalDate').innerText = "Détail du " + d;
+            document.getElementById('modalDate').innerText = "Détail du " + p2(d);
             let html = '<div class="space-y-3">';
             segments.forEach(x => { 
                 const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black text-white">${Math.floor(x.dureeMinutes/60)}h${x.dureeMinutes%60}</p></div>`; 
+                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black text-white">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
             });
             document.getElementById('modalBody').innerHTML = html + '</div>';
             document.getElementById('dayModal').classList.remove('hidden');
@@ -385,5 +422,3 @@
     </script>
 </body>
 </html>
-
-
