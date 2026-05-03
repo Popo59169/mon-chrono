@@ -4,37 +4,80 @@
     <title>Tachy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff6b35">
+    <meta name="theme-color" content="#f97316">
+    <meta name="color-scheme" content="light dark">
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('sw.js');
         });
       }
+
+      (function() {
+        const theme = localStorage.getItem('monChrono_theme') || 'auto';
+        const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      })();
     </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
     <style>
-        body { background-color: #0d1117; color: #ffffff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1.5rem; }
-        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
-        .worked { background: linear-gradient(135deg, #ff6b35 0%, #d44d1a 100%); color: white; }
-        .rest { background: #1e293b; color: #475569; }
-        .conge { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; color: white !important; }
-        .empty { visibility: hidden; }
-        .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #ff6b35; padding-bottom: 8px; font-style: italic; }
+        /* --- RESET & TRANSITIONS --- */
+        body { font-family: sans-serif; margin: 0; overflow-x: hidden; transition: background 0.3s; }
         
-        .color-conduite { background: #22c55e; height: 100%; }
-        .color-travail { background: #eab308; height: 100%; }
-        .color-repos { background: #ef4444; height: 100%; }
+        /* --- MODE SOMBRE --- */
+        .dark body { background-color: #0a0a0a !important; color: #eeeeee !important; }
+        .dark .glass-card { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; }
+        .dark header { background-color: #0a0a0a !important; }
+        .dark .rest { background: #262626 !important; color: #737373 !important; }
+        .dark .day-box-border { border: 1px solid #2a2a2a !important; }
+        .dark .sidebar { background: #0f0f0f !important; border-right: 1px solid #262626 !important; }
 
-        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #0f172a; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #1e293b; }
+        /* --- MODE CLAIR --- */
+        body { background-color: #f3f4f6; color: #1f2937; }
+        .glass-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 1.5rem; }
+        header { background-color: #f3f4f6 !important; }
+        .rest { background: #e5e7eb; color: #9ca3af; }
+        .day-box-border { border: 1px solid #e5e7eb; }
+        .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
+
+        /* --- ÉLÉMENTS CRITIQUES (ORANGE) --- */
+        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
+        
+        .worked { 
+            /* LA CLÉ : Empêche l'inversion de couleur par le navigateur */
+            color-scheme: only light !important;
+            background: linear-gradient(135deg, #f97316 0%, #c2410c 100%) !important; 
+            color: #ffffff !important; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .conge { 
+            color-scheme: only light !important;
+            background: linear-gradient(135deg, #404040 0%, #171717 100%) !important; 
+            color: white !important; 
+            border: 1px solid #525252; 
+        }
+        
+        .empty { visibility: hidden; }
+        .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #f97316; padding-bottom: 8px; font-style: italic; }
+        
+        /* Activités Tachy - On force aussi le respect des couleurs */
+        .color-conduite { background-color: #10b981 !important; color-scheme: only light; }
+        .color-travail { background-color: #f59e0b !important; color-scheme: only light; }
+        .color-repos { background-color: #ef4444 !important; color-scheme: only light; }
+
+        /* --- NAVIGATION --- */
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 1000; transform: translateX(-100%); transition: 0.3s; }
         .sidebar.open { transform: translateX(0); }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
-        .tab-active { background: #ff6b35 !important; color: white !important; }
+        .tab-active { background: #f97316 !important; color: white !important; }
         .hidden { display: none !important; }
         
-        .timeline-item { border-left: 2px solid rgba(255,255,255,0.1); padding-left: 15px; position: relative; padding-bottom: 15px; }
+        .timeline-item { border-left: 2px solid #374151; padding-left: 15px; position: relative; padding-bottom: 15px; }
         .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
     </style>
 </head>
@@ -45,25 +88,25 @@
     <div id="sidebar" class="sidebar p-6">
         <h2 class="text-orange-500 font-black italic uppercase text-2xl mb-10">Menu</h2>
         <nav class="flex flex-col gap-3">
-            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📊 Dashboard</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">🚛 Activités</button>
-            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">💰 Frais & Primes</button>
-            <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-white text-sm">📥 Importation</button>
-            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-slate-800 rounded-xl font-bold uppercase italic text-slate-400 border-t border-white/10 mt-4 text-sm">⚙️ Paramètres</button>
+            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">📊 Dashboard</button>
+            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">🚛 Activités</button>
+            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">💰 Frais & Primes</button>
+            <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">📥 Importation</button>
+            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-neutral-500 border-t border-black/5 dark:border-white/5 mt-4 text-sm">⚙️ Paramètres</button>
         </nav>
     </div>
 
-    <header class="p-6 flex flex-col gap-4 sticky top-0 bg-[#0d1117] z-50">
+    <header class="p-6 flex flex-col gap-4 sticky top-0 z-50">
         <div class="flex items-center gap-4">
             <div onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
             <div>
-                <h1 class="text-xl font-black italic uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
-                <p class="text-[10px] text-slate-500 font-bold uppercase italic">Dylan Petit — Conducteur de Nuit</p>
+                <h1 class="text-xl font-black italic uppercase leading-none dark:text-white text-neutral-800">Mon <span class="text-orange-500">Chrono</span></h1>
+                <p class="text-[10px] text-neutral-500 font-bold uppercase italic">Dylan Petit — Conducteur de Nuit</p>
             </div>
         </div>
-        <div id="monthNav" class="flex justify-between items-center bg-slate-800/50 p-2 rounded-xl border border-white/5">
+        <div id="monthNav" class="flex justify-between items-center bg-white dark:bg-neutral-900 p-2 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
             <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
-            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest text-white">---</span>
+            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest dark:text-white text-neutral-800">---</span>
             <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
         </div>
     </header>
@@ -72,21 +115,21 @@
         <div id="view-dashboard" class="page-view">
             <div class="glass-card p-4 mb-6 border-b-4 border-orange-500 flex justify-around items-center">
                 <div class="text-center">
-                    <p id="labelAnnee" class="text-[8px] font-black text-slate-500 uppercase italic">Année 2026</p>
+                    <p id="labelAnnee" class="text-[8px] font-black text-neutral-500 uppercase italic">Année 2026</p>
                     <p id="countTravailAnnuel" class="text-2xl font-black italic text-orange-500">0</p>
-                    <p class="text-[8px] font-bold text-white uppercase">Jours travaillés</p>
+                    <p class="text-[8px] font-bold dark:text-white text-neutral-800 uppercase">Jours travaillés</p>
                 </div>
-                <div class="w-[1px] h-10 bg-white/10"></div>
+                <div class="w-[1px] h-10 bg-black/10 dark:bg-white/10"></div>
                 <div class="text-center">
-                    <p class="text-[8px] font-black text-slate-500 uppercase italic">Compteur</p>
-                    <p id="countCongeAnnuel" class="text-2xl font-black italic text-blue-400">0</p>
-                    <p class="text-[8px] font-bold text-white uppercase">Jours Congés</p>
+                    <p class="text-[8px] font-black text-neutral-500 uppercase italic">Compteur</p>
+                    <p id="countCongeAnnuel" class="text-2xl font-black italic text-neutral-400">0</p>
+                    <p class="text-[8px] font-bold dark:text-white text-neutral-800 uppercase">Jours Congés</p>
                 </div>
             </div>
 
             <div class="flex gap-2 mb-6">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black tab-active uppercase italic text-white">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-slate-800 text-[10px] font-black uppercase italic text-white">Tachygraphe</button>
+                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black tab-active uppercase italic dark:text-white text-neutral-800 shadow-sm">Calendrier</button>
+                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black uppercase italic dark:text-white text-neutral-800 shadow-sm">Tachygraphe</button>
             </div>
 
             <div id="sec-cal" class="space-y-4">
@@ -99,12 +142,22 @@
             <div id="sec-tachy" class="hidden space-y-4">
                 <div class="glass-card overflow-hidden">
                     <table class="w-full text-[10px] text-left border-collapse">
-                        <thead class="bg-white/10 text-orange-500 font-black uppercase italic">
-                            <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
+                        <thead class="bg-neutral-100 dark:bg-neutral-800 text-orange-500 font-black uppercase italic">
+                            <tr>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Service</th>
+                                <th class="p-3">Nuit</th>
+                                <th class="p-3">Frais</th>
+                            </tr>
                         </thead>
                         <tbody id="bodyTachy"></tbody>
-                        <tfoot class="bg-orange-500/20 font-black italic text-white border-t border-white/20">
-                            <tr><td class="p-3">TOTAUX</td><td id="totalService" class="p-3 text-orange-500">0h00</td><td id="totalNuit" class="p-3 text-blue-400">0h00</td><td id="totalFraisTachy" class="p-3 text-emerald-400">0.00€</td></tr>
+                        <tfoot class="bg-neutral-50 dark:bg-neutral-900 font-black italic border-t border-black/5 dark:border-white/5">
+                            <tr>
+                                <td class="p-3 text-orange-500">TOTAUX</td>
+                                <td id="totalService" class="p-3 dark:text-white text-neutral-800">0h00</td>
+                                <td id="totalNuit" class="p-3 text-blue-500 dark:text-blue-400">0h00</td>
+                                <td id="totalFraisTachy" class="p-3 text-emerald-600 dark:text-emerald-500">0.00€</td>
+                            </tr>
                         </tfoot>
                     </table>
                 </div>
@@ -112,53 +165,61 @@
         </div>
 
         <div id="view-activities" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
+            <h2 class="text-xl font-black italic uppercase dark:text-white text-neutral-800">Journal de Bord</h2>
             <div id="activitiesList" class="space-y-6"></div>
         </div>
 
         <div id="view-frais" class="page-view hidden space-y-6">
             <div class="glass-card p-5 border-l-4 border-emerald-500 flex justify-between items-center mb-4">
                 <div>
-                    <p id="payrollPeriod" class="text-[9px] font-black text-slate-500 uppercase italic mb-1">---</p>
-                    <p class="text-[10px] font-bold uppercase text-white">Estimation Paie (Frais + Primes)</p>
+                    <p id="payrollPeriod" class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">---</p>
+                    <p class="text-[10px] font-bold uppercase dark:text-white text-neutral-800">Estimation Paie (Frais + Primes)</p>
                 </div>
                 <div class="text-right">
-                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-400">0.00€</p>
-                    <p id="detailPayroll" class="text-[8px] font-bold text-slate-400 uppercase">---</p>
+                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-600 dark:text-emerald-500">0.00€</p>
+                    <p id="detailPayroll" class="text-[8px] font-bold text-neutral-500 uppercase">---</p>
                 </div>
             </div>
             <div id="fraisList" class="space-y-4"></div>
         </div>
 
         <div id="view-import" class="page-view hidden space-y-6">
-            <div class="glass-card p-6 border-l-4 border-blue-500">
-                <h3 class="text-[10px] font-black uppercase italic text-white mb-4">Gestion des données</h3>
-                <div class="w-full border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-800/30 cursor-pointer" onclick="document.getElementById('fileInput').click()">
+            <div class="glass-card p-6 border-l-4 border-neutral-600">
+                <h3 class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800 mb-4">Gestion des données</h3>
+                <div class="w-full border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl p-8 flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900 cursor-pointer" onclick="document.getElementById('fileInput').click()">
                     <span class="text-3xl mb-2">📥</span>
-                    <p class="text-[9px] font-bold text-slate-500 uppercase text-center">Ajouter un fichier CSV (Cumul)</p>
+                    <p class="text-[9px] font-bold text-neutral-500 dark:text-neutral-600 uppercase text-center">Ajouter un fichier CSV (Cumul)</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
                 </div>
-                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-500/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic hover:bg-red-500/10 transition">🗑️ Tout effacer</button>
+                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic hover:bg-red-500/10 transition">🗑️ Tout effacer</button>
             </div>
         </div>
 
         <div id="view-settings" class="page-view hidden space-y-6">
             <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Casse-croûte (< 5h)</span><input type="number" id="valCasseCroute" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-slate-800 border-none p-2 rounded text-right w-20 text-white font-bold"></div>
-                <button onclick="saveSettings()" class="w-full bg-emerald-600 py-3 rounded-xl font-black uppercase text-xs italic text-white">Enregistrer</button>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Thème App</span>
+                    <select id="themeSelector" onchange="applyTheme(this.value)" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right text-[10px] font-bold dark:text-white text-neutral-800">
+                        <option value="auto">Automatique</option>
+                        <option value="light">Clair</option>
+                        <option value="dark">Sombre</option>
+                    </select>
+                </div>
+                <hr class="border-black/5 dark:border-white/5">
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Casse-croûte (&lt; 5h)</span><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
+                <button onclick="saveSettings()" class="w-full bg-emerald-700 py-3 rounded-xl font-black uppercase text-xs italic text-white shadow-lg">Enregistrer</button>
             </div>
         </div>
     </main>
 
     <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
-        <div class="absolute inset-0 bg-black/80" onclick="closeModal()"></div>
-        <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
-            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-white"></h3>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto shadow-2xl">
+            <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-orange-500"></h3>
             <div id="modalBody"></div>
-            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white">Fermer</button>
+            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white shadow-lg">Fermer</button>
         </div>
     </div>
 
@@ -168,16 +229,22 @@
         let curY = now.getFullYear();
         
         let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { 
-            casseCroute: 8.87, 
-            repasNuit: 9.81, 
-            repasStandard: 16.36, 
-            prime: 40.00 
+            casseCroute: 8.87, repasNuit: 9.81, repasStandard: 16.36, prime: 40.00 
         };
         
         let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-        // Formatage pour deux chiffres (01, 02, etc.)
+        function applyTheme(theme) {
+            localStorage.setItem('monChrono_theme', theme);
+            const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
         function p2(n) { return String(n).padStart(2, '0'); }
 
         function estJourFerie(date) {
@@ -292,6 +359,10 @@
         }
 
         function initApp() {
+            const savedTheme = localStorage.getItem('monChrono_theme') || 'auto';
+            document.getElementById('themeSelector').value = savedTheme;
+            applyTheme(savedTheme);
+
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
             document.getElementById('labelAnnee').innerText = "Année " + curY;
             
@@ -307,7 +378,7 @@
             const actList = document.getElementById('activitiesList');
             
             grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
-            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
+            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header font-black">${h}</div>`).join('');
             
             let firstDay = new Date(curY, curM, 1).getDay();
             let shift = (firstDay === 0) ? 6 : firstDay - 1;
@@ -316,54 +387,62 @@
             let sumFraisPaie = 0, sumPrimesMois = 0, totalServiceMois = 0, totalNuitMois = 0, totalFraisTachy = 0;
             let countTravailAnnuel = 0, countCongeAnnuel = 0;
 
-            Object.keys(dataCSV).forEach(dateStr => {
-                const [d, m, y] = dateStr.split('/').map(Number);
-                if (y === curY) countTravailAnnuel++;
+            Object.keys(dataCSV).forEach(key => {
+                const parts = key.split('/');
+                if (parts.length === 3 && parseInt(parts[2]) === curY) countTravailAnnuel++;
             });
             listeConges.forEach(dateStr => {
-                const [d, m, y] = dateStr.split('/').map(Number);
-                if (y === curY) countCongeAnnuel++;
+                const parts = dateStr.split('/');
+                if (parts.length === 3 && parseInt(parts[2]) === curY) countCongeAnnuel++;
             });
             document.getElementById('countTravailAnnuel').innerText = countTravailAnnuel;
             document.getElementById('countCongeAnnuel').innerText = countCongeAnnuel;
 
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             for(let d=1; d<=daysInMonth; d++) {
-                // Formatage de la date affichée (01/03/2026)
                 const dFormatted = `${p2(d)}/${p2(curM + 1)}/${curY}`;
-                // Pour chercher dans la base, on garde le format stocké par l'import (souvent J/M/Y sans 0 devant)
-                const searchKey = `${d}/${curM + 1}/${curY}`;
-                const poste = dataCSV[searchKey] || dataCSV[dFormatted];
+                const dShort = `${d}/${curM + 1}/${curY}`;
+                const poste = dataCSV[dFormatted] || dataCSV[dShort];
                 const isConge = listeConges.includes(dFormatted);
 
-                if(poste) {
+                if(poste && poste.length > 0) {
                     let sJ = 0, nJ = 0;
-                    poste.forEach(a => { if(a.type!=='repos'){ sJ+=a.dureeMinutes; nJ+=calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
+                    poste.forEach(a => { 
+                        if(a.type !== 'repos'){ 
+                            sJ += a.dureeMinutes; 
+                            nJ += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); 
+                        } 
+                    });
                     totalServiceMois += sJ; totalNuitMois += nJ;
-                    
                     const calculFrais = determinerFraisAutomatique(poste);
                     totalFraisTachy += calculFrais.montant;
 
                     grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${p2(sJ%60)}','${Math.floor(nJ/60)}h${p2(nJ%60)}')">${d}</div>`;
-                    tBody.innerHTML += `<tr class="border-b border-white/5"><td class="p-3 text-slate-400 font-bold">${p2(d)}/${p2(curM+1)}</td><td class="p-3 text-white font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td><td class="p-3 text-blue-400 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td><td class="p-3 text-emerald-400 font-black">${calculFrais.montant > 0 ? calculFrais.montant.toFixed(2) + '€' : '-'}</td></tr>`;
+                    
+                    tBody.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5">
+                        <td class="p-3 text-neutral-500 dark:text-neutral-400 font-bold">${p2(d)}/${p2(curM+1)}</td>
+                        <td class="p-3 dark:text-white text-neutral-800 font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td>
+                        <td class="p-3 text-blue-500 dark:text-blue-400 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td>
+                        <td class="p-3 text-emerald-600 dark:text-emerald-500 font-black">${calculFrais.montant > 0 ? calculFrais.montant.toFixed(2) + '€' : '-'}</td>
+                    </tr>`;
                     
                     const row = document.createElement('div');
                     row.className = "space-y-2 cursor-pointer";
-                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-slate-400">${dFormatted}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${p2(sJ%60)}</p></div><div class="w-full h-8 bg-black rounded-lg overflow-hidden flex border border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
+                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-neutral-500">${dFormatted}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${p2(sJ%60)}</p></div><div class="w-full h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden flex border border-black/5 dark:border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
                     row.onclick = () => showTimelineFromData(d, poste);
                     actList.appendChild(row);
 
                     const dtDep = new Date(curY, curM, d);
                     if (dtDep.getDay() === 0 || estJourFerie(dtDep)) {
                         sumPrimesMois += tarifs.prime;
-                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">${dFormatted}</p><p class="text-xs font-bold text-white italic">Prime Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${tarifs.prime.toFixed(2)}€</p></div>`;
+                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500 mb-2 shadow-sm"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${dFormatted}</p><p class="text-xs font-bold dark:text-white text-neutral-800 italic">Prime Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${tarifs.prime.toFixed(2)}€</p></div>`;
                     }
                     if (calculFrais.montant > 0) {
                         sumFraisPaie += calculFrais.montant;
-                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-500 mb-2"><div><p class="text-[8px] font-black text-slate-500 uppercase">${dFormatted}</p><p class="text-xs font-bold text-white italic">${calculFrais.label}</p></div><p class="text-xl font-black text-white">${calculFrais.montant.toFixed(2)}€</p></div>`;
+                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-600 mb-2 shadow-sm"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${dFormatted}</p><p class="text-xs font-bold dark:text-white text-neutral-800 italic">${calculFrais.label}</p></div><p class="text-xl font-black dark:text-white text-neutral-800">${calculFrais.montant.toFixed(2)}€</p></div>`;
                     }
                 } else {
-                    grid.innerHTML += `<div class="day-box rest ${isConge ? 'conge' : ''}" onclick="toggleConge('${dFormatted}')">${d}</div>`;
+                    grid.innerHTML += `<div class="day-box rest day-box-border ${isConge ? 'conge' : ''}" onclick="toggleConge('${dFormatted}')">${d}</div>`;
                 }
             }
 
@@ -398,23 +477,21 @@
             tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value);
             tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value);
             tarifs.prime = parseFloat(document.getElementById('valPrime').value);
-            
             localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
-            initApp(); 
-            alert("Enregistré"); 
+            initApp(); alert("Enregistré"); 
         }
 
         function showHeures(d, s, n) {
             document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM];
-            document.getElementById('modalBody').innerHTML = `<p class="text-white font-black">Service: ${s}</p><p class="text-blue-400 font-black">Nuit: ${n}</p>`;
+            document.getElementById('modalBody').innerHTML = `<p class="dark:text-white text-neutral-800 font-black">Service: ${s}</p><p class="text-blue-500 dark:text-blue-400 font-black">Nuit: ${n}</p>`;
             document.getElementById('dayModal').classList.remove('hidden');
         }
         function showTimelineFromData(d, segments) {
-            document.getElementById('modalDate').innerText = "Détail du " + p2(d);
+            document.getElementById('modalDate').innerText = "Détail du " + p2(d) + " " + moisNoms[curM];
             let html = '<div class="space-y-3">';
             segments.forEach(x => { 
-                const color = x.type === 'conduite' ? '#22c55e' : (x.type === 'travail' ? '#eab308' : '#ef4444');
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black text-white">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
+                const color = x.type === 'conduite' ? '#10b981' : (x.type === 'travail' ? '#f59e0b' : '#ef4444');
+                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white text-neutral-800">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
             });
             document.getElementById('modalBody').innerHTML = html + '</div>';
             document.getElementById('dayModal').classList.remove('hidden');
