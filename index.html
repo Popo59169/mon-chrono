@@ -1,78 +1,69 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
     <title>Tachy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
-    <meta name="color-scheme" content="light dark">
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('sw.js');
         });
       }
-
+      
+      // Système de détection du thème immédiat pour éviter le flash blanc
       (function() {
         const theme = localStorage.getItem('monChrono_theme') || 'auto';
-        const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (isDark) document.documentElement.classList.add('dark');
+        if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       })();
     </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { darkMode: 'class' }
+        tailwind.config = {
+            darkMode: 'class',
+        }
     </script>
     <style>
-        /* --- RESET & TRANSITIONS --- */
-        body { font-family: sans-serif; margin: 0; overflow-x: hidden; transition: background 0.3s; }
-        
-        /* --- MODE SOMBRE --- */
-        .dark body { background-color: #0a0a0a !important; color: #eeeeee !important; }
-        .dark .glass-card { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; }
+        /* Couleurs Thème Sombre */
+        .dark body { background-color: #0a0a0a; color: #eeeeee; }
+        .dark .glass-card { background: #1a1a1a; border: 1px solid #2a2a2a; }
         .dark header { background-color: #0a0a0a !important; }
-        .dark .rest { background: #262626 !important; color: #737373 !important; }
-        .dark .day-box-border { border: 1px solid #2a2a2a !important; }
-        .dark .sidebar { background: #0f0f0f !important; border-right: 1px solid #262626 !important; }
+        .dark .rest { background: #262626; color: #737373; }
+        .dark .day-box-border { border: 1px solid #2a2a2a; }
 
-        /* --- MODE CLAIR --- */
-        body { background-color: #f3f4f6; color: #1f2937; }
-        .glass-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 1.5rem; }
-        header { background-color: #f3f4f6 !important; }
+        /* Couleurs Thème Clair */
+        body { background-color: #f3f4f6; color: #1f2937; font-family: sans-serif; margin: 0; overflow-x: hidden; transition: background 0.3s ease; }
+        .glass-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 1.5rem; transition: background 0.3s ease; }
+        header { background-color: #f3f4f6 !important; transition: background 0.3s ease; }
         .rest { background: #e5e7eb; color: #9ca3af; }
         .day-box-border { border: 1px solid #e5e7eb; }
-        .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
 
-        /* --- ÉLÉMENTS CRITIQUES (ORANGE) --- */
         .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
         
-        .worked { 
-            /* LA CLÉ : Empêche l'inversion de couleur par le navigateur */
-            color-scheme: only light !important;
-            background: linear-gradient(135deg, #f97316 0%, #c2410c 100%) !important; 
-            color: #ffffff !important; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .conge { 
-            color-scheme: only light !important;
-            background: linear-gradient(135deg, #404040 0%, #171717 100%) !important; 
-            color: white !important; 
-            border: 1px solid #525252; 
-        }
+        /* Accents (restent identiques) */
+        .worked { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; }
+        .conge { background: linear-gradient(135deg, #404040 0%, #171717 100%) !important; color: white !important; border: 1px solid #525252; }
         
         .empty { visibility: hidden; }
         .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #f97316; padding-bottom: 8px; font-style: italic; }
         
-        /* Activités Tachy - On force aussi le respect des couleurs */
-        .color-conduite { background-color: #10b981 !important; color-scheme: only light; }
-        .color-travail { background-color: #f59e0b !important; color-scheme: only light; }
-        .color-repos { background-color: #ef4444 !important; color-scheme: only light; }
+        /* Couleurs Activités */
+        .color-conduite { background: #10b981; height: 100%; }
+        .color-travail { background: #f59e0b; height: 100%; }
+        .color-repos { background: #ef4444; height: 100%; }
 
-        /* --- NAVIGATION --- */
-        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 1000; transform: translateX(-100%); transition: 0.3s; }
+        /* Sidebar & Menu */
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #262626; }
+        .dark .sidebar { background: #0f0f0f; border-right: 1px solid #262626; }
+        .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
         .sidebar.open { transform: translateX(0); }
+        
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
         .tab-active { background: #f97316 !important; color: white !important; }
         .hidden { display: none !important; }
@@ -100,7 +91,7 @@
         <div class="flex items-center gap-4">
             <div onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
             <div>
-                <h1 class="text-xl font-black italic uppercase leading-none dark:text-white text-neutral-800">Mon <span class="text-orange-500">Chrono</span></h1>
+                <h1 class="text-xl font-black italic uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
                 <p class="text-[10px] text-neutral-500 font-bold uppercase italic">Dylan Petit — Conducteur de Nuit</p>
             </div>
         </div>
@@ -165,7 +156,7 @@
         </div>
 
         <div id="view-activities" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase dark:text-white text-neutral-800">Journal de Bord</h2>
+            <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
             <div id="activitiesList" class="space-y-6"></div>
         </div>
 
@@ -197,7 +188,7 @@
 
         <div id="view-settings" class="page-view hidden space-y-6">
             <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Thème App</span>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Thème App</span>
                     <select id="themeSelector" onchange="applyTheme(this.value)" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right text-[10px] font-bold dark:text-white text-neutral-800">
                         <option value="auto">Automatique</option>
                         <option value="light">Clair</option>
@@ -205,9 +196,9 @@
                     </select>
                 </div>
                 <hr class="border-black/5 dark:border-white/5">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Casse-croûte (&lt; 5h)</span><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Casse-croûte (&lt; 5h)</span><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
                 <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
                 <button onclick="saveSettings()" class="w-full bg-emerald-700 py-3 rounded-xl font-black uppercase text-xs italic text-white shadow-lg">Enregistrer</button>
             </div>
@@ -237,8 +228,7 @@
 
         function applyTheme(theme) {
             localStorage.setItem('monChrono_theme', theme);
-            const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            if (isDark) {
+            if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
@@ -359,6 +349,7 @@
         }
 
         function initApp() {
+            // Initialisation Thème
             const savedTheme = localStorage.getItem('monChrono_theme') || 'auto';
             document.getElementById('themeSelector').value = savedTheme;
             applyTheme(savedTheme);
@@ -378,7 +369,7 @@
             const actList = document.getElementById('activitiesList');
             
             grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
-            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header font-black">${h}</div>`).join('');
+            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
             
             let firstDay = new Date(curY, curM, 1).getDay();
             let shift = (firstDay === 0) ? 6 : firstDay - 1;
