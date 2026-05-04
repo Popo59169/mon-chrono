@@ -476,8 +476,32 @@
             formatDate: (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,
             
             isFerie(date) {
-                const f = ["01/01", "13/04", "01/05", "08/05", "21/05", "01/06", "14/07", "15/08", "01/11", "11/11", "25/12"];
-                return f.includes(`${this.p2(date.getDate())}/${this.p2(date.getMonth() + 1)}`);
+                const j = date.getDate();
+                const m = date.getMonth() + 1;
+                const y = date.getFullYear();
+
+                // Jours fixes
+                const fixes = ["01/01", "01/05", "08/05", "14/07", "15/08", "01/11", "11/11", "25/12"];
+                if (fixes.includes(`${String(j).padStart(2, '0')}/${String(m).padStart(2, '0')}`)) return true;
+
+                // Calcul de Pâques (Algorithme de Meeus)
+                const a = y % 19, b = Math.floor(y / 100), c = y % 100;
+                const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+                const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+                const i = Math.floor(c / 4), k = c % 4;
+                const l = (32 + 2 * e + 2 * i - h - k) % 7;
+                const n = Math.floor((a + 11 * h + 22 * l) / 451);
+                const moisP = Math.floor((h + l - 7 * n + 114) / 31);
+                const jourP = ((h + l - 7 * n + 114) % 31) + 1;
+                const datePaques = new Date(y, moisP - 1, jourP);
+
+                const isSame = (d1, d2) => d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth();
+                
+                const lundiP = new Date(datePaques); lundiP.setDate(datePaques.getDate() + 1);
+                const ascen = new Date(datePaques); ascen.setDate(datePaques.getDate() + 39);
+                const lundiPent = new Date(datePaques); lundiPent.setDate(datePaques.getDate() + 50);
+
+                return isSame(date, lundiP) || isSame(date, ascen) || isSame(date, lundiPent);
             },
 
             getType: (label) => {
@@ -719,7 +743,6 @@
                     h += `<div class="timeline-item"><div class="timeline-dot" style="background:${c}"></div><p class="text-[10px] uppercase font-black" style="color:${c}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white">${Math.floor(x.dureeMinutes/60)}h${Calcs.p2(x.dureeMinutes%60)}</p></div>`;
                 });
 
-                // Calcul et ajout de la ligne de fin de service
                 const lastA = segments[segments.length - 1];
                 const endTs = lastA.timestamp + (lastA.dureeMinutes * 60000);
                 const endH = Calcs.p2(new Date(endTs).getHours()) + ':' + Calcs.p2(new Date(endTs).getMinutes());
