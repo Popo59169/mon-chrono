@@ -1,43 +1,29 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr">
 <head>
     <title>Tachy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js');
-        });
-      }
-      
-      // Système de détection du thème immédiat pour éviter le flash blanc
       (function() {
         const theme = localStorage.getItem('monChrono_theme') || 'auto';
         if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
         }
       })();
     </script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
     <style>
-        /* Couleurs Thème Sombre */
         .dark body { background-color: #0a0a0a; color: #eeeeee; }
         .dark .glass-card { background: #1a1a1a; border: 1px solid #2a2a2a; }
         .dark header { background-color: #0a0a0a !important; }
         .dark .rest { background: #262626; color: #737373; }
         .dark .day-box-border { border: 1px solid #2a2a2a; }
 
-        /* Couleurs Thème Clair */
         body { background-color: #f3f4f6; color: #1f2937; font-family: sans-serif; margin: 0; overflow-x: hidden; transition: background 0.3s ease; }
         .glass-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 1.5rem; transition: background 0.3s ease; }
         header { background-color: #f3f4f6 !important; transition: background 0.3s ease; }
@@ -45,21 +31,17 @@
         .day-box-border { border: 1px solid #e5e7eb; }
 
         .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
-        
-        /* Accents (restent identiques) */
         .worked { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; }
         .conge { background: linear-gradient(135deg, #404040 0%, #171717 100%) !important; color: white !important; border: 1px solid #525252; }
         
         .empty { visibility: hidden; }
         .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #f97316; padding-bottom: 8px; font-style: italic; }
         
-        /* Couleurs Activités */
         .color-conduite { background: #10b981; height: 100%; }
         .color-travail { background: #f59e0b; height: 100%; }
         .color-repos { background: #ef4444; height: 100%; }
 
-        /* Sidebar & Menu */
-        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 1000; transform: translateX(-100%); transition: 0.3s; border-right: 1px solid #262626; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 1000; transform: translateX(-100%); transition: 0.3s; }
         .dark .sidebar { background: #0f0f0f; border-right: 1px solid #262626; }
         .sidebar { background: #ffffff; border-right: 1px solid #e5e7eb; }
         .sidebar.open { transform: translateX(0); }
@@ -70,6 +52,14 @@
         
         .timeline-item { border-left: 2px solid #374151; padding-left: 15px; position: relative; padding-bottom: 15px; }
         .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
+
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #d1d5db; transition: .3s; border-radius: 34px; }
+        .dark .slider { background-color: #3f3f46; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #f97316; }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body onload="initApp()">
@@ -79,11 +69,11 @@
     <div id="sidebar" class="sidebar p-6">
         <h2 class="text-orange-500 font-black italic uppercase text-2xl mb-10">Menu</h2>
         <nav class="flex flex-col gap-3">
-            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">📊 Dashboard</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">🚛 Activités</button>
-            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">💰 Frais & Primes</button>
-            <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic dark:text-white text-neutral-800 text-sm">📥 Importation</button>
-            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-neutral-500 border-t border-black/5 dark:border-white/5 mt-4 text-sm">⚙️ Paramètres</button>
+            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">📊 Dashboard</button>
+            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">🚛 Activités</button>
+            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">💰 Frais & Primes</button>
+            <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">📥 Importation</button>
+            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-neutral-500 border-t border-black/5 mt-4 text-sm">⚙️ Paramètres</button>
         </nav>
     </div>
 
@@ -91,13 +81,13 @@
         <div class="flex items-center gap-4">
             <div onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
             <div>
-                <h1 class="text-xl font-black italic uppercase leading-none">Mon <span class="text-orange-500">Chrono</span></h1>
+                <h1 class="text-xl font-black italic uppercase leading-none dark:text-white text-neutral-800">Mon <span class="text-orange-500">Chrono</span></h1>
                 <p class="text-[10px] text-neutral-500 font-bold uppercase italic">Dylan Petit — Conducteur de Nuit</p>
             </div>
         </div>
-        <div id="monthNav" class="flex justify-between items-center bg-white dark:bg-neutral-900 p-2 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
+        <div id="monthNav" class="flex justify-between items-center bg-white dark:bg-neutral-900 p-2 rounded-xl shadow-sm">
             <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
-            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest dark:text-white text-neutral-800">---</span>
+            <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest dark:text-white">---</span>
             <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
         </div>
     </header>
@@ -108,109 +98,108 @@
                 <div class="text-center">
                     <p id="labelAnnee" class="text-[8px] font-black text-neutral-500 uppercase italic">Année 2026</p>
                     <p id="countTravailAnnuel" class="text-2xl font-black italic text-orange-500">0</p>
-                    <p class="text-[8px] font-bold dark:text-white text-neutral-800 uppercase">Jours travaillés</p>
+                    <p class="text-[8px] font-bold dark:text-white uppercase">Jours travaillés</p>
                 </div>
                 <div class="w-[1px] h-10 bg-black/10 dark:bg-white/10"></div>
                 <div class="text-center">
                     <p class="text-[8px] font-black text-neutral-500 uppercase italic">Compteur</p>
                     <p id="countCongeAnnuel" class="text-2xl font-black italic text-neutral-400">0</p>
-                    <p class="text-[8px] font-bold dark:text-white text-neutral-800 uppercase">Jours Congés</p>
+                    <p class="text-[8px] font-bold dark:text-white uppercase">Jours Congés</p>
                 </div>
             </div>
-
             <div class="flex gap-2 mb-6">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black tab-active uppercase italic dark:text-white text-neutral-800 shadow-sm">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black uppercase italic dark:text-white text-neutral-800 shadow-sm">Tachygraphe</button>
+                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black tab-active uppercase italic shadow-sm">Calendrier</button>
+                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black uppercase italic dark:text-white shadow-sm">Tachygraphe</button>
             </div>
-
-            <div id="sec-cal" class="space-y-4">
-                <div class="glass-card p-5">
-                    <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
-                    <div id="grid" class="grid grid-cols-7 gap-2"></div>
-                </div>
+            <div id="sec-cal" class="glass-card p-5">
+                <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
+                <div id="grid" class="grid grid-cols-7 gap-2"></div>
             </div>
-
-            <div id="sec-tachy" class="hidden space-y-4">
-                <div class="glass-card overflow-hidden">
-                    <table class="w-full text-[10px] text-left border-collapse">
-                        <thead class="bg-neutral-100 dark:bg-neutral-800 text-orange-500 font-black uppercase italic">
-                            <tr>
-                                <th class="p-3">Date</th>
-                                <th class="p-3">Service</th>
-                                <th class="p-3">Nuit</th>
-                                <th class="p-3">Frais</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bodyTachy"></tbody>
-                        <tfoot class="bg-neutral-50 dark:bg-neutral-900 font-black italic border-t border-black/5 dark:border-white/5">
-                            <tr>
-                                <td class="p-3 text-orange-500">TOTAUX</td>
-                                <td id="totalService" class="p-3 dark:text-white text-neutral-800">0h00</td>
-                                <td id="totalNuit" class="p-3 text-blue-500 dark:text-blue-400">0h00</td>
-                                <td id="totalFraisTachy" class="p-3 text-emerald-600 dark:text-emerald-500">0.00€</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+            <div id="sec-tachy" class="hidden glass-card overflow-hidden">
+                <table class="w-full text-[10px] text-left border-collapse">
+                    <thead class="bg-neutral-100 dark:bg-neutral-800 text-orange-500 font-black uppercase italic">
+                        <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
+                    </thead>
+                    <tbody id="bodyTachy"></tbody>
+                    <tfoot class="bg-neutral-50 dark:bg-neutral-900 font-black italic border-t border-black/5 dark:border-white/5">
+                        <tr><td class="p-3 text-orange-500">TOTAUX</td><td id="totalService" class="p-3 dark:text-white">0h00</td><td id="totalNuit" class="p-3 text-blue-500">0h00</td><td id="totalFraisTachy" class="p-3 text-emerald-600">0.00€</td></tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
 
         <div id="view-activities" class="page-view hidden space-y-6">
-            <h2 class="text-xl font-black italic uppercase">Journal de Bord</h2>
+            <h2 class="text-xl font-black italic uppercase dark:text-white">Journal de Bord</h2>
             <div id="activitiesList" class="space-y-6"></div>
         </div>
 
         <div id="view-frais" class="page-view hidden space-y-6">
-            <div class="glass-card p-5 border-l-4 border-emerald-500 flex justify-between items-center mb-4">
+            <div class="glass-card p-5 border-l-4 border-emerald-500 flex justify-between items-center">
                 <div>
                     <p id="payrollPeriod" class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">---</p>
-                    <p class="text-[10px] font-bold uppercase dark:text-white text-neutral-800">Estimation Paie (Frais + Primes)</p>
+                    <p class="text-[10px] font-bold uppercase dark:text-white">Total Frais + Primes</p>
                 </div>
                 <div class="text-right">
-                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-600 dark:text-emerald-500">0.00€</p>
+                    <p id="totalPayroll" class="text-2xl font-black italic text-emerald-600">0.00€</p>
                     <p id="detailPayroll" class="text-[8px] font-bold text-neutral-500 uppercase">---</p>
                 </div>
             </div>
-            <div id="fraisList" class="space-y-4"></div>
+            <div class="space-y-2">
+                <h3 class="text-[10px] font-black uppercase text-neutral-500 italic">Détail des Frais (Cycle choisi)</h3>
+                <div id="fraisList" class="space-y-2"></div>
+            </div>
+            <div class="space-y-2 pt-4">
+                <h3 class="text-[10px] font-black uppercase text-orange-500 italic">Primes Dimanches & Fériés (Mois Civil)</h3>
+                <div id="primesList" class="space-y-2"></div>
+            </div>
         </div>
 
         <div id="view-import" class="page-view hidden space-y-6">
-            <div class="glass-card p-6 border-l-4 border-neutral-600">
-                <h3 class="text-[10px] font-black uppercase italic dark:text-white text-neutral-800 mb-4">Gestion des données</h3>
-                <div class="w-full border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl p-8 flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900 cursor-pointer" onclick="document.getElementById('fileInput').click()">
-                    <span class="text-3xl mb-2">📥</span>
-                    <p class="text-[9px] font-bold text-neutral-500 dark:text-neutral-600 uppercase text-center">Ajouter un fichier CSV (Cumul)</p>
+            <div class="glass-card p-6 text-center">
+                <h3 class="text-[10px] font-black uppercase italic mb-4">Importation CSV</h3>
+                <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl p-8 bg-neutral-50 dark:bg-neutral-900 cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <span class="text-3xl">📥</span>
+                    <p class="text-[9px] font-bold text-neutral-500 uppercase mt-2">Glisser ou sélectionner CSV</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
                 </div>
-                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic hover:bg-red-500/10 transition">🗑️ Tout effacer</button>
+                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic">🗑️ Réinitialiser tout</button>
             </div>
         </div>
 
         <div id="view-settings" class="page-view hidden space-y-6">
             <div class="glass-card p-6 space-y-4">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Thème App</span>
-                    <select id="themeSelector" onchange="applyTheme(this.value)" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right text-[10px] font-bold dark:text-white text-neutral-800">
-                        <option value="auto">Automatique</option>
-                        <option value="light">Clair</option>
-                        <option value="dark">Sombre</option>
+                <h3 class="text-orange-500 font-black italic uppercase text-xs">Configuration</h3>
+                
+                <div class="flex flex-col gap-2">
+                    <label class="text-[10px] font-black uppercase text-neutral-500 italic">Plage de frais</label>
+                    <select id="cycleType" onchange="toggleCycleDay()" class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl text-[10px] font-bold dark:text-white border-none">
+                        <option value="civil">Mois Civil (1er au 31)</option>
+                        <option value="prev_curr">Mois Précédent → Actuel</option>
+                        <option value="curr_next">Mois Actuel → Suivant</option>
                     </select>
                 </div>
-                <hr class="border-black/5 dark:border-white/5">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Casse-croûte (&lt; 5h)</span><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase italic text-orange-500">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 border-none p-2 rounded text-right w-20 dark:text-white text-neutral-800 font-bold"></div>
-                <button onclick="saveSettings()" class="w-full bg-emerald-700 py-3 rounded-xl font-black uppercase text-xs italic text-white shadow-lg">Enregistrer</button>
+
+                <div id="daySelectorGroup" class="flex justify-between items-center py-2 hidden">
+                    <span class="text-[10px] font-black uppercase italic dark:text-white">Jour charnière (ex: 15)</span>
+                    <input type="number" id="cycleDay" min="1" max="31" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-16 dark:text-white font-bold">
+                </div>
+
+                <hr class="opacity-10">
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase text-orange-500 italic">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                
+                <button onclick="saveSettings()" class="w-full bg-emerald-700 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg">Enregistrer</button>
             </div>
         </div>
     </main>
 
     <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="glass-card w-full max-sm p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto shadow-2xl">
+        <div class="glass-card w-full max-w-md p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
             <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-orange-500"></h3>
             <div id="modalBody"></div>
-            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs italic text-white shadow-lg">Fermer</button>
+            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs text-white">Fermer</button>
         </div>
     </div>
 
@@ -219,42 +208,48 @@
         let curM = now.getMonth(); 
         let curY = now.getFullYear();
         
-        let tarifs = JSON.parse(localStorage.getItem('monChrono_tarifs')) || { 
-            casseCroute: 8.87, repasNuit: 9.81, repasStandard: 16.36, prime: 40.00 
+        let settings = JSON.parse(localStorage.getItem('monChrono_settings')) || { 
+            cycleType: 'civil', cycleDay: 15, cumulSoirNuit: false,
+            tarifs: { casseCroute: 8.87, repasNuit: 9.81, repasStandard: 16.36, prime: 40.00 }
         };
         
         let listeConges = JSON.parse(localStorage.getItem('monChrono_conges')) || [];
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
-        function applyTheme(theme) {
-            localStorage.setItem('monChrono_theme', theme);
-            if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
+        function p2(n) { return String(n).padStart(2, '0'); }
+
+        function toggleCycleDay() {
+            const type = document.getElementById('cycleType').value;
+            document.getElementById('daySelectorGroup').classList.toggle('hidden', type === 'civil');
         }
 
-        function p2(n) { return String(n).padStart(2, '0'); }
+        function getPayrollDates() {
+            let start, end;
+            const day = parseInt(settings.cycleDay);
+            if (settings.cycleType === 'civil') {
+                start = new Date(curY, curM, 1); end = new Date(curY, curM + 1, 0);
+            } else if (settings.cycleType === 'prev_curr') {
+                start = new Date(curY, curM - 1, day); end = new Date(curY, curM, day - 1);
+            } else if (settings.cycleType === 'curr_next') {
+                start = new Date(curY, curM, day); end = new Date(curY, curM + 1, day - 1);
+            }
+            return { start, end };
+        }
 
         function estJourFerie(date) {
             const joursFeries = ["01/01", "13/04", "01/05", "08/05", "21/05", "01/06", "14/07", "15/08", "01/11", "11/11", "25/12"];
-            const d = p2(date.getDate());
-            const m = p2(date.getMonth() + 1);
-            return joursFeries.includes(`${d}/${m}`);
+            return joursFeries.includes(`${p2(date.getDate())}/${p2(date.getMonth() + 1)}`);
         }
 
         function verifieCouverture(ts, duree, h1, m1, h2, m2) {
-            let debut = new Date(ts);
-            let fin = new Date(ts + duree * 60000);
+            let debut = new Date(ts); let fin = new Date(ts + duree * 60000);
             let p1 = new Date(ts); p1.setHours(h1, m1, 0);
             let p2 = new Date(ts); p2.setHours(h2, m2, 0);
             return (debut <= p1 && fin >= p2);
         }
 
         function calculerMinutesDansPlage(ts, duree, startH, endH) {
-            let mins = 0;
-            let d = new Date(ts);
+            let mins = 0; let d = new Date(ts);
             for (let i = 0; i < duree; i++) {
                 let h = d.getHours();
                 if (startH > endH) { if (h >= startH || h < endH) mins++; }
@@ -264,225 +259,163 @@
             return mins;
         }
 
-        function determinerFraisAutomatique(poste) {
-            if (!poste || poste.length === 0) return { label: "N/A", montant: 0 };
+        function determinerFrais(poste) {
+            if (!poste) return { label: "", montant: 0 };
             const hDebut = parseInt(poste[0].heure.split(':')[0]);
-            let couvreMidi = false, couvreSoir = false, travailNuitMins = 0;
-
+            let couvreMidi = false, couvreSoir = false, nMinutes = 0;
+            let tags = []; let m = 0;
             poste.forEach(a => {
                 if (a.type !== 'repos') {
-                    travailNuitMins += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 22, 7);
+                    nMinutes += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 22, 7);
                     if (verifieCouverture(a.timestamp, a.dureeMinutes, 11, 45, 14, 15)) couvreMidi = true;
                     if (verifieCouverture(a.timestamp, a.dureeMinutes, 18, 45, 21, 15)) couvreSoir = true;
                 }
             });
-
-            if (couvreMidi || couvreSoir) return { label: "Repas", montant: tarifs.repasStandard };
-            if (travailNuitMins >= 240) return { label: "Repas Unique Nuit", montant: tarifs.repasNuit };
-            if (hDebut < 5) return { label: "Casse-croûte", montant: tarifs.casseCroute };
-            return { label: "Aucun", montant: 0 };
-        }
-
-        function handleFileSelect(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const rows = text.split('\n');
-                let newActivities = [];
-                rows.forEach(row => {
-                    const cols = row.replace(/"/g, '').split(';');
-                    if (cols.length < 5) return;
-                    const dtParts = cols[0].trim().split(' ');
-                    if(dtParts.length < 2) return;
-                    const dateStr = dtParts[0];
-                    const [j, m, a] = dateStr.split('/').map(Number);
-                    const [hh, mm] = dtParts[1].split(':').map(Number);
-                    const timestamp = new Date(a, m - 1, j, hh, mm).getTime();
-                    const duree = cols[4];
-                    if (cols[2].includes("Card") || !duree.includes(":")) return;
-                    newActivities.push({
-                        timestamp, date: dateStr, 
-                        heure: dtParts[1].substring(0,5),
-                        type: cols[2].toLowerCase().includes('repos') ? 'repos' : (cols[2].toLowerCase().includes('conduite') ? 'conduite' : 'travail'),
-                        label: cols[2],
-                        dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
-                    });
-                });
-                let existingPostes = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
-                const newPostes = {};
-                let currentPosteDate = null;
-                newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
-                    if (act.type !== 'repos') {
-                        if (!currentPosteDate) { currentPosteDate = act.date; newPostes[currentPosteDate] = []; }
-                        newPostes[currentPosteDate].push(act);
-                    } else if (act.dureeMinutes > 420) { currentPosteDate = null; }
-                    else if (currentPosteDate) { newPostes[currentPosteDate].push(act); }
-                });
-                const mergedData = { ...existingPostes, ...newPostes };
-                localStorage.setItem('monChrono_data_csv', JSON.stringify(mergedData));
-                initApp();
-                navTo('dashboard');
-                alert("Importation réussie !");
-            };
-            reader.readAsText(file);
-        }
-
-        function clearAllData() {
-            if(confirm("Tout supprimer ?")) {
-                localStorage.removeItem('monChrono_data_csv');
-                localStorage.removeItem('monChrono_conges');
-                listeConges = [];
-                initApp();
-            }
-        }
-
-        function toggleConge(dateStr) {
-            if (listeConges.includes(dateStr)) {
-                listeConges = listeConges.filter(d => d !== dateStr);
-            } else {
-                listeConges.push(dateStr);
-            }
-            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges));
-            initApp();
+            if (couvreMidi) { tags.push("Midi"); m += settings.tarifs.repasStandard; }
+            if (couvreSoir) { tags.push("Soir"); m += settings.tarifs.repasStandard; }
+            if ((settings.cumulSoirNuit || !couvreSoir) && nMinutes >= 240) { tags.push("Unique Nuit"); m += settings.tarifs.repasNuit; }
+            if (hDebut < 5) { tags.push("Casse-croûte"); m += settings.tarifs.casseCroute; }
+            return { label: tags.join(' + '), montant: m };
         }
 
         function initApp() {
-            // Initialisation Thème
-            const savedTheme = localStorage.getItem('monChrono_theme') || 'auto';
-            document.getElementById('themeSelector').value = savedTheme;
-            applyTheme(savedTheme);
-
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
             document.getElementById('labelAnnee').innerText = "Année " + curY;
             
-            document.getElementById('valCasseCroute').value = tarifs.casseCroute;
-            document.getElementById('valRepasNuit').value = tarifs.repasNuit;
-            document.getElementById('valRepasStandard').value = tarifs.repasStandard;
-            document.getElementById('valPrime').value = tarifs.prime;
+            document.getElementById('cycleType').value = settings.cycleType;
+            document.getElementById('cycleDay').value = settings.cycleDay;
+            document.getElementById('valRepasNuit').value = settings.tarifs.repasNuit;
+            document.getElementById('valRepasStandard').value = settings.tarifs.repasStandard;
+            document.getElementById('valPrime').value = settings.tarifs.prime;
+            toggleCycleDay();
 
-            const dataCSV = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
+            const data = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
             const grid = document.getElementById('grid');
             const tBody = document.getElementById('bodyTachy');
-            const fList = document.getElementById('fraisList');
             const actList = document.getElementById('activitiesList');
+            const fList = document.getElementById('fraisList');
+            const pList = document.getElementById('primesList');
             
-            grid.innerHTML = ""; tBody.innerHTML = ""; fList.innerHTML = ""; actList.innerHTML = "";
+            grid.innerHTML = ""; tBody.innerHTML = ""; actList.innerHTML = ""; fList.innerHTML = ""; pList.innerHTML = "";
             document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
             
             let firstDay = new Date(curY, curM, 1).getDay();
             let shift = (firstDay === 0) ? 6 : firstDay - 1;
             for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
 
-            let sumFraisPaie = 0, sumPrimesMois = 0, totalServiceMois = 0, totalNuitMois = 0, totalFraisTachy = 0;
-            let countTravailAnnuel = 0, countCongeAnnuel = 0;
-
-            Object.keys(dataCSV).forEach(key => {
-                const parts = key.split('/');
-                if (parts.length === 3 && parseInt(parts[2]) === curY) countTravailAnnuel++;
-            });
-            listeConges.forEach(dateStr => {
-                const parts = dateStr.split('/');
-                if (parts.length === 3 && parseInt(parts[2]) === curY) countCongeAnnuel++;
-            });
-            document.getElementById('countTravailAnnuel').innerText = countTravailAnnuel;
-            document.getElementById('countCongeAnnuel').innerText = countCongeAnnuel;
-
+            let sMonth = 0, nMonth = 0, fMonth = 0;
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
+            const civilStart = new Date(curY, curM, 1);
+            const civilEnd = new Date(curY, curM + 1, 0);
+
             for(let d=1; d<=daysInMonth; d++) {
-                const dFormatted = `${p2(d)}/${p2(curM + 1)}/${curY}`;
-                const dShort = `${d}/${curM + 1}/${curY}`;
-                const poste = dataCSV[dFormatted] || dataCSV[dShort];
-                const isConge = listeConges.includes(dFormatted);
+                const dF = `${p2(d)}/${p2(curM + 1)}/${curY}`;
+                const poste = data[dF] || data[`${d}/${curM+1}/${curY}`];
+                const isC = listeConges.includes(dF);
 
-                if(poste && poste.length > 0) {
+                if(poste) {
                     let sJ = 0, nJ = 0;
-                    poste.forEach(a => { 
-                        if(a.type !== 'repos'){ 
-                            sJ += a.dureeMinutes; 
-                            nJ += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); 
-                        } 
-                    });
-                    totalServiceMois += sJ; totalNuitMois += nJ;
-                    const calculFrais = determinerFraisAutomatique(poste);
-                    totalFraisTachy += calculFrais.montant;
-
+                    poste.forEach(a => { if(a.type !== 'repos'){ sJ += a.dureeMinutes; nJ += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
+                    sMonth += sJ; nMonth += nJ;
+                    const cF = determinerFrais(poste);
+                    fMonth += cF.montant;
                     grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${p2(sJ%60)}','${Math.floor(nJ/60)}h${p2(nJ%60)}')">${d}</div>`;
+                    tBody.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5"><td class="p-3 opacity-50">${p2(d)}/${p2(curM+1)}</td><td class="p-3 font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td><td class="p-3 text-blue-500 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td><td class="p-3 text-emerald-600 font-black">${cF.montant.toFixed(2)}€</td></tr>`;
                     
-                    tBody.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5">
-                        <td class="p-3 text-neutral-500 dark:text-neutral-400 font-bold">${p2(d)}/${p2(curM+1)}</td>
-                        <td class="p-3 dark:text-white text-neutral-800 font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td>
-                        <td class="p-3 text-blue-500 dark:text-blue-400 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td>
-                        <td class="p-3 text-emerald-600 dark:text-emerald-500 font-black">${calculFrais.montant > 0 ? calculFrais.montant.toFixed(2) + '€' : '-'}</td>
-                    </tr>`;
-                    
-                    const row = document.createElement('div');
-                    row.className = "space-y-2 cursor-pointer";
-                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-neutral-500">${dFormatted}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${p2(sJ%60)}</p></div><div class="w-full h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden flex border border-black/5 dark:border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
-                    row.onclick = () => showTimelineFromData(d, poste);
-                    actList.appendChild(row);
-
-                    const dtDep = new Date(curY, curM, d);
-                    if (dtDep.getDay() === 0 || estJourFerie(dtDep)) {
-                        sumPrimesMois += tarifs.prime;
-                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500 mb-2 shadow-sm"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${dFormatted}</p><p class="text-xs font-bold dark:text-white text-neutral-800 italic">Prime Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${tarifs.prime.toFixed(2)}€</p></div>`;
-                    }
-                    if (calculFrais.montant > 0) {
-                        sumFraisPaie += calculFrais.montant;
-                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-600 mb-2 shadow-sm"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${dFormatted}</p><p class="text-xs font-bold dark:text-white text-neutral-800 italic">${calculFrais.label}</p></div><p class="text-xl font-black dark:text-white text-neutral-800">${calculFrais.montant.toFixed(2)}€</p></div>`;
-                    }
+                    const row = document.createElement('div'); row.className = "space-y-2 cursor-pointer";
+                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-neutral-500">${dF}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${p2(sJ%60)}</p></div><div class="w-full h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden flex border border-black/5 dark:border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
+                    row.onclick = () => showTimelineFromData(d, poste); actList.appendChild(row);
                 } else {
-                    grid.innerHTML += `<div class="day-box rest day-box-border ${isConge ? 'conge' : ''}" onclick="toggleConge('${dFormatted}')">${d}</div>`;
+                    grid.innerHTML += `<div class="day-box rest day-box-border ${isC ? 'conge' : ''}" onclick="toggleConge('${dF}')">${d}</div>`;
                 }
             }
 
-            document.getElementById('totalService').innerText = Math.floor(totalServiceMois/60) + "h" + p2(totalServiceMois%60);
-            document.getElementById('totalNuit').innerText = Math.floor(totalNuitMois/60) + "h" + p2(totalNuitMois%60);
-            document.getElementById('totalFraisTachy').innerText = totalFraisTachy.toFixed(2) + "€";
-            document.getElementById('totalPayroll').innerText = (sumFraisPaie + sumPrimesMois).toFixed(2) + "€";
-            document.getElementById('detailPayroll').innerText = `Frais: ${sumFraisPaie.toFixed(2)}€ | Primes: ${sumPrimesMois.toFixed(2)}€`;
+            const pDates = getPayrollDates();
+            document.getElementById('payrollPeriod').innerText = `Cycle Frais : ${p2(pDates.start.getDate())}/${p2(pDates.start.getMonth()+1)} au ${p2(pDates.end.getDate())}/${p2(pDates.end.getMonth()+1)}`;
+            let sumF = 0, sumP = 0;
+
+            Object.keys(data).forEach(k => {
+                const parts = k.split('/'); const dt = new Date(parts[2], parts[1]-1, parts[0]);
+                if(dt >= pDates.start && dt <= pDates.end) {
+                    const cF = determinerFrais(data[k]);
+                    if(cF.montant > 0) {
+                        sumF += cF.montant;
+                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-600"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${cF.label}</p></div><p class="text-xl font-black">${cF.montant.toFixed(2)}€</p></div>`;
+                    }
+                }
+                if(dt >= civilStart && dt <= civilEnd) {
+                    if(dt.getDay() === 0 || estJourFerie(dt)) {
+                        sumP += settings.tarifs.prime;
+                        pList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">Départ Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${settings.tarifs.prime.toFixed(2)}€</p></div>`;
+                    }
+                }
+            });
+
+            document.getElementById('totalPayroll').innerText = (sumF + sumP).toFixed(2) + "€";
+            document.getElementById('detailPayroll').innerText = `Frais: ${sumF.toFixed(2)}€ | Primes: ${sumP.toFixed(2)}€`;
+            document.getElementById('totalService').innerText = Math.floor(sMonth/60) + "h" + p2(sMonth%60);
+            document.getElementById('totalNuit').innerText = Math.floor(nMonth/60) + "h" + p2(nMonth%60);
+            document.getElementById('totalFraisTachy').innerText = fMonth.toFixed(2) + "€";
         }
 
-        function navTo(id) {
-            document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
-            document.getElementById('view-' + id).classList.remove('hidden');
-            toggleSidebar(false);
+        function saveSettings() {
+            settings.cycleType = document.getElementById('cycleType').value;
+            settings.cycleDay = parseInt(document.getElementById('cycleDay').value);
+            settings.tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value);
+            settings.tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value);
+            settings.tarifs.prime = parseFloat(document.getElementById('valPrime').value);
+            localStorage.setItem('monChrono_settings', JSON.stringify(settings));
+            initApp(); alert("Paramètres enregistrés !");
         }
-        function toggleSidebar(f) { 
-            const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); 
-            if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; }
-            s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; 
+
+        function handleFileSelect(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result; const rows = text.split('\n');
+                let newActivities = [];
+                rows.forEach(row => {
+                    const cols = row.replace(/"/g, '').split(';'); if (cols.length < 5) return;
+                    const dtParts = cols[0].trim().split(' '); if(dtParts.length < 2) return;
+                    const [j, m, a] = dtParts[0].split('/').map(Number);
+                    const [hh, mm] = dtParts[1].split(':').map(Number);
+                    const ts = new Date(a, m - 1, j, hh, mm).getTime();
+                    const duree = cols[4]; if (cols[2].includes("Card") || !duree.includes(":")) return;
+                    newActivities.push({
+                        timestamp: ts, date: dtParts[0], heure: dtParts[1].substring(0,5),
+                        type: cols[2].toLowerCase().includes('repos') ? 'repos' : (cols[2].toLowerCase().includes('conduite') ? 'conduite' : 'travail'),
+                        label: cols[2], dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
+                    });
+                });
+                let existing = JSON.parse(localStorage.getItem('monChrono_data_csv')) || {};
+                const newPostes = {}; let currentP = null;
+                newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
+                    if (act.type !== 'repos') {
+                        if (!currentP) { currentP = act.date; newPostes[currentP] = []; }
+                        newPostes[currentP].push(act);
+                    } else if (act.dureeMinutes > 420) { currentP = null; }
+                    else if (currentP) { newPostes[currentP].push(act); }
+                });
+                localStorage.setItem('monChrono_data_csv', JSON.stringify({ ...existing, ...newPostes }));
+                initApp(); navTo('dashboard'); alert("Importation terminée !");
+            };
+            reader.readAsText(file);
         }
-        function setTab(t) { 
-            document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); 
-            document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); 
-            document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); 
-            document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); 
-        }
+
+        function toggleSidebar(f) { const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; } s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; }
+        function navTo(id) { document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden')); document.getElementById('view-' + id).classList.remove('hidden'); toggleSidebar(false); }
+        function setTab(t) { document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); }
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
+        function toggleConge(d) { if (listeConges.includes(d)) { listeConges = listeConges.filter(x => x !== d); } else { listeConges.push(d); } localStorage.setItem('monChrono_conges', JSON.stringify(listeConges)); initApp(); }
         function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-        
-        function saveSettings() { 
-            tarifs.casseCroute = parseFloat(document.getElementById('valCasseCroute').value);
-            tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value);
-            tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value);
-            tarifs.prime = parseFloat(document.getElementById('valPrime').value);
-            localStorage.setItem('monChrono_tarifs', JSON.stringify(tarifs));
-            initApp(); alert("Enregistré"); 
-        }
-
-        function showHeures(d, s, n) {
-            document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM];
-            document.getElementById('modalBody').innerHTML = `<p class="dark:text-white text-neutral-800 font-black">Service: ${s}</p><p class="text-blue-500 dark:text-blue-400 font-black">Nuit: ${n}</p>`;
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
+        function clearAllData() { if(confirm("Effacer tout ?")) { localStorage.clear(); location.reload(); } }
+        function showHeures(d, s, n) { document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM]; document.getElementById('modalBody').innerHTML = `<p class="dark:text-white font-black">Service: ${s}</p><p class="text-blue-500 font-black">Nuit: ${n}</p>`; document.getElementById('dayModal').classList.remove('hidden'); }
         function showTimelineFromData(d, segments) {
             document.getElementById('modalDate').innerText = "Détail du " + p2(d) + " " + moisNoms[curM];
             let html = '<div class="space-y-3">';
             segments.forEach(x => { 
                 const color = x.type === 'conduite' ? '#10b981' : (x.type === 'travail' ? '#f59e0b' : '#ef4444');
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white text-neutral-800">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
+                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
             });
             document.getElementById('modalBody').innerHTML = html + '</div>';
             document.getElementById('dayModal').classList.remove('hidden');
