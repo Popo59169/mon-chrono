@@ -32,7 +32,8 @@
 
         .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
         .worked { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; }
-        .conge { background: linear-gradient(135deg, #404040 0%, #171717 100%) !important; color: white !important; border: 1px solid #525252; }
+        
+        .conge { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; color: white !important; border: 1px solid #065f46; }
         
         .empty { visibility: hidden; }
         .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #f97316; padding-bottom: 8px; font-style: italic; }
@@ -94,17 +95,23 @@
 
     <main class="px-6 pb-10">
         <div id="view-dashboard" class="page-view">
-            <div class="glass-card p-4 mb-6 border-b-4 border-orange-500 flex justify-around items-center">
+            <div class="glass-card p-6 mb-6 border-b-4 border-orange-500 flex justify-around items-center">
                 <div class="text-center">
-                    <p id="labelAnnee" class="text-[8px] font-black text-neutral-500 uppercase italic">Année 2026</p>
-                    <p id="countTravailAnnuel" class="text-2xl font-black italic text-orange-500">0</p>
-                    <p class="text-[8px] font-bold dark:text-white uppercase">Jours travaillés</p>
+                    <p id="titleAnneeTravail" class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">En ---</p>
+                    <p id="countTravailAnnuel" class="text-3xl font-black italic text-orange-500">0</p>
+                    <p class="text-[8px] font-bold dark:text-white uppercase mt-1">Jours travaillés</p>
                 </div>
                 <div class="w-[1px] h-10 bg-black/10 dark:bg-white/10"></div>
                 <div class="text-center">
-                    <p class="text-[8px] font-black text-neutral-500 uppercase italic">Compteur</p>
-                    <p id="countCongeAnnuel" class="text-2xl font-black italic text-neutral-400">0</p>
-                    <p class="text-[8px] font-bold dark:text-white uppercase">Jours Congés</p>
+                    <p class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">Ce mois-ci</p>
+                    <p id="countTravailMensuel" class="text-3xl font-black italic text-orange-500">0</p>
+                    <p class="text-[8px] font-bold dark:text-white uppercase mt-1">Jours travaillés</p>
+                </div>
+                <div class="w-[1px] h-10 bg-black/10 dark:bg-white/10"></div>
+                <div class="text-center cursor-pointer active:scale-95 transition-transform" onclick="showHistoriqueConges()">
+                    <p id="titleAnneeConge" class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">Période ---</p>
+                    <p id="countCongeAnnuel" class="text-3xl font-black italic text-emerald-500">0</p>
+                    <p class="text-[8px] font-bold dark:text-white uppercase mt-1">Congés pris</p>
                 </div>
             </div>
 
@@ -325,7 +332,6 @@
             document.documentElement.classList.toggle('dark', savedTheme === 'dark');
 
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
-            document.getElementById('labelAnnee').innerText = "Année " + curY;
             
             document.getElementById('cycleType').value = settings.cycleType;
             document.getElementById('cycleDay').value = settings.cycleDay;
@@ -350,6 +356,7 @@
             for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
 
             let sMonth = 0, nMonth = 0, fMonth = 0;
+            let countTravailMensuel = 0; 
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             const civilStart = new Date(curY, curM, 1);
             const civilEnd = new Date(curY, curM + 1, 0);
@@ -360,6 +367,7 @@
                 const isC = listeConges.includes(dF);
 
                 if(poste) {
+                    countTravailMensuel++; 
                     let sJ = 0, nJ = 0;
                     poste.forEach(a => { if(a.type !== 'repos'){ sJ += a.dureeMinutes; nJ += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
                     sMonth += sJ; nMonth += nJ;
@@ -376,6 +384,32 @@
                     grid.innerHTML += `<div class="day-box rest day-box-border ${isC ? 'conge' : ''}" onclick="toggleConge('${dF}')">${d}</div>`;
                 }
             }
+
+            document.getElementById('titleAnneeTravail').innerText = "En " + curY;
+
+            let debutSocial, finSocial;
+            if (curM >= 5) { 
+                debutSocial = new Date(curY, 5, 1);
+                finSocial = new Date(curY + 1, 4, 31);
+            } else { 
+                debutSocial = new Date(curY - 1, 5, 1);
+                finSocial = new Date(curY, 4, 31);
+            }
+            document.getElementById('titleAnneeConge').innerText = `Depuis le 01/06/${debutSocial.getFullYear()}`;
+
+            let joursTravaillesAnnuels = Object.keys(data).filter(date => {
+                return date.endsWith('/' + curY) || date.endsWith('/' + curY.toString().slice(-2));
+            }).length;
+
+            let joursCongesPériode = listeConges.filter(str => {
+                let p = str.split('/');
+                let d = new Date(p[2], p[1]-1, p[0]);
+                return d >= debutSocial && d <= finSocial;
+            }).length;
+
+            document.getElementById('countTravailAnnuel').innerText = joursTravaillesAnnuels;
+            document.getElementById('countTravailMensuel').innerText = countTravailMensuel;
+            document.getElementById('countCongeAnnuel').innerText = joursCongesPériode;
 
             const pDates = getPayrollDates();
             document.getElementById('payrollPeriod').innerText = `Cycle Frais : ${p2(pDates.start.getDate())}/${p2(pDates.start.getMonth()+1)} au ${p2(pDates.end.getDate())}/${p2(pDates.end.getMonth()+1)}`;
@@ -407,12 +441,84 @@
             document.getElementById('totalService').innerText = Math.floor(sMonth/60) + "h" + p2(sMonth%60);
             document.getElementById('totalNuit').innerText = Math.floor(nMonth/60) + "h" + p2(nMonth%60);
             document.getElementById('totalFraisTachy').innerText = fMonth.toFixed(2) + "€";
-            
-            // Mise à jour des compteurs annuels
-            let joursTravaillesAnnuels = Object.keys(data).filter(k => k.endsWith('/' + curY)).length;
-            let joursCongesAnnuels = listeConges.filter(k => k.endsWith('/' + curY)).length;
-            document.getElementById('countTravailAnnuel').innerText = joursTravaillesAnnuels;
-            document.getElementById('countCongeAnnuel').innerText = joursCongesAnnuels;
+        }
+
+        /**
+         * LOGIQUE D'AFFICHAGE DES CONGÉS (Regroupement intelligent avec Fériés/Dimanches)
+         */
+        function showHistoriqueConges() {
+            let debutSocial, finSocial;
+            if (curM >= 5) { 
+                debutSocial = new Date(curY, 5, 1);
+                finSocial = new Date(curY + 1, 4, 31);
+            } else { 
+                debutSocial = new Date(curY - 1, 5, 1);
+                finSocial = new Date(curY, 4, 31);
+            }
+
+            let datesObj = listeConges.map(str => {
+                let p = str.split('/');
+                return { str: str, date: new Date(p[2], p[1]-1, p[0]) };
+            }).filter(obj => obj.date >= debutSocial && obj.date <= finSocial)
+              .sort((a, b) => a.date - b.date);
+
+            if (datesObj.length === 0) {
+                alert(`Aucun congé pour la période du 01/06/${debutSocial.getFullYear()} au 31/05/${finSocial.getFullYear()}`);
+                return;
+            }
+
+            let groupes = [];
+            let currentGroup = [datesObj[0]];
+
+            for (let i = 1; i < datesObj.length; i++) {
+                let prevDate = new Date(datesObj[i-1].date);
+                let nextDate = new Date(datesObj[i].date);
+                
+                // On vérifie les jours entre les deux dates de congés posées
+                let tempDate = new Date(prevDate);
+                tempDate.setDate(tempDate.getDate() + 1);
+                
+                let continuite = true;
+                while (tempDate < nextDate) {
+                    // Si un jour entre deux congés n'est ni dimanche ni férié, on casse le groupe
+                    if (tempDate.getDay() !== 0 && !estJourFerie(tempDate)) {
+                        continuite = false;
+                        break;
+                    }
+                    tempDate.setDate(tempDate.getDate() + 1);
+                }
+
+                if (continuite) {
+                    currentGroup.push(datesObj[i]);
+                } else {
+                    groupes.push(currentGroup);
+                    currentGroup = [datesObj[i]];
+                }
+            }
+            groupes.push(currentGroup);
+
+            let html = `<div class="space-y-3">`;
+            groupes.forEach(g => {
+                let countRelatif = g.length;
+                if (g.length > 1) {
+                    html += `
+                    <div class="glass-card p-4 border-l-4 border-emerald-500">
+                        <p class="text-[9px] font-black text-neutral-500 uppercase italic">Période de ${countRelatif} j. posés</p>
+                        <p class="text-sm font-black dark:text-white">Du ${g[0].str.split('/20')[0]} au ${g[g.length-1].str.split('/20')[0]}</p>
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="glass-card p-4 border-l-4 border-emerald-500">
+                        <p class="text-[9px] font-black text-neutral-500 uppercase italic">Jour unique</p>
+                        <p class="text-sm font-black dark:text-white">Le ${g[0].str}</p>
+                    </div>`;
+                }
+            });
+            html += `</div>`;
+
+            document.getElementById('modalDate').innerText = "Congés " + debutSocial.getFullYear() + "/" + finSocial.getFullYear();
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('dayModal').classList.remove('hidden');
         }
 
         function saveSettings() {
