@@ -30,7 +30,7 @@
         .rest { background: #e5e7eb; color: #9ca3af; }
         .day-box-border { border: 1px solid #e5e7eb; }
 
-        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; overflow: hidden; }
+        .day-box { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; font-weight: 900; cursor: pointer; font-size: 0.8rem; position: relative; }
         .worked { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; }
         .conge { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; color: white !important; border: 1px solid #065f46; }
         
@@ -40,8 +40,6 @@
         .color-conduite { background: #10b981; height: 100%; }
         .color-travail { background: #f59e0b; height: 100%; }
         .color-repos { background: #ef4444; height: 100%; }
-
-        .badge-ferie { position: absolute; top: 0; right: 0; background: #ef4444; color: white; font-size: 5px; padding: 1px 3px; font-weight: 900; text-transform: uppercase; border-bottom-left-radius: 4px; }
 
         .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; z-index: 1000; transform: translateX(-100%); transition: 0.3s; }
         .dark .sidebar { background: #0f0f0f; border-right: 1px solid #262626; }
@@ -69,6 +67,7 @@
         .import-input { width: 100%; padding: 1rem; background: #f3f4f6; border-radius: 0.75rem; font-weight: 800; text-transform: uppercase; font-style: italic; border: none; outline: none; font-size: 0.8rem; }
         .dark .import-input { background: #0a0a0a; color: white; }
 
+        /* Accordion Style */
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 1000px; }
         .accordion-chevron { transition: transform 0.3s; }
@@ -140,13 +139,6 @@
             </div>
 
             <div id="sec-tachy" class="hidden glass-card overflow-hidden">
-                <div class="p-3 bg-neutral-50 dark:bg-neutral-800/50 flex justify-between items-center border-b border-black/5 dark:border-white/5">
-                    <span class="text-[9px] font-black uppercase italic text-neutral-500 tracking-wider">Mode de calcul :</span>
-                    <div class="flex bg-neutral-200 dark:bg-neutral-900 p-1 rounded-lg">
-                        <button id="modeRonde" onclick="switchTachyMode('ronde')" class="px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all bg-orange-500 text-white">Ronde</button>
-                        <button id="modeJour" onclick="switchTachyMode('jour')" class="px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all text-neutral-500 dark:text-neutral-400">Jour</button>
-                    </div>
-                </div>
                 <table class="w-full text-[10px] text-left border-collapse">
                     <thead class="bg-neutral-100 dark:bg-neutral-800 text-orange-500 font-black uppercase italic">
                         <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
@@ -215,6 +207,7 @@
 
                 <div class="space-y-4">
                     <h3 class="text-orange-500 font-black italic uppercase text-xs">FRAIS</h3>
+                    
                     <div class="flex flex-col gap-2">
                         <label class="text-[10px] font-black uppercase text-neutral-500 italic">plage de frais</label>
                         <select id="cycleType" onchange="toggleCycleDay()" class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl text-[10px] font-bold dark:text-white border-none">
@@ -223,12 +216,15 @@
                             <option value="curr_next">Mois Actuel → Suivant</option>
                         </select>
                     </div>
+
                     <div id="daySelectorGroup" class="flex justify-between items-center py-2 hidden">
                         <span class="text-[10px] font-black uppercase italic dark:text-white">Jour charnière (ex: 15)</span>
                         <input type="number" id="cycleDay" min="1" max="31" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-16 dark:text-white font-bold">
                     </div>
+
                     <hr class="border-black/10 dark:border-white/10 my-4">
                     <h3 class="text-neutral-500 font-black italic uppercase text-[10px] mb-2">Montant des indemnités</h3>
+
                     <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Petit Déjeuner</span><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
                     <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Unique</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
                     <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Jour</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
@@ -239,7 +235,8 @@
 
                 <div class="space-y-4">
                     <h3 class="text-orange-500 font-black italic uppercase text-xs">Gestion des Archives</h3>
-                    <div id="archiveAccordionContainer" class="space-y-3"></div>
+                    <div id="archiveAccordionContainer" class="space-y-3">
+                        </div>
                     <button onclick="clearAllData()" class="w-full mt-2 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic">🗑️ Réinitialiser l'application</button>
                 </div>
 
@@ -260,19 +257,25 @@
     <div id="importModal" class="hidden fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/90">
         <div class="glass-card w-full max-w-sm p-8 border-t-4 border-orange-500">
             <h3 class="text-xl font-black italic uppercase mb-4 text-orange-500">Importation</h3>
+            
             <div id="sectionExistingUser" class="space-y-4">
                 <p class="text-[10px] font-bold text-neutral-500 uppercase">Choisir un profil existant :</p>
                 <select id="importSelectUser" class="import-input"></select>
                 <button onclick="confirmImportWithUser()" class="w-full py-3 bg-emerald-600 text-white font-black uppercase rounded-2xl text-[10px]">Valider pour ce profil</button>
+                
                 <div class="flex items-center gap-4 my-4">
-                    <hr class="flex-1 opacity-20"><span class="text-[8px] font-bold text-neutral-500 uppercase">OU</span><hr class="flex-1 opacity-20">
+                    <hr class="flex-1 opacity-20">
+                    <span class="text-[8px] font-bold text-neutral-500 uppercase">OU</span>
+                    <hr class="flex-1 opacity-20">
                 </div>
             </div>
+
             <div id="sectionNewUser" class="space-y-4">
                 <p class="text-[10px] font-bold text-neutral-500 uppercase">Créer un nouveau profil :</p>
                 <input type="text" id="importNewUserName" placeholder="NOM DU CONDUCTEUR" class="import-input">
                 <button onclick="confirmImportWithNewUser()" class="w-full py-3 bg-orange-600 text-white font-black uppercase rounded-2xl text-[10px]">Créer et Importer</button>
             </div>
+            
             <button onclick="document.getElementById('importModal').classList.add('hidden')" class="w-full mt-4 text-[8px] font-bold text-neutral-500 uppercase italic">Annuler</button>
         </div>
     </div>
@@ -282,7 +285,6 @@
         let curM = now.getMonth(); 
         let curY = now.getFullYear();
         let currentFileToProcess = null;
-        let tachyMode = 'ronde';
         
         let settings = JSON.parse(localStorage.getItem('monChrono_settings')) || { 
             cycleType: 'civil', cycleDay: 15,
@@ -325,23 +327,47 @@
             return joursFeries.includes(`${p2(date.getDate())}/${p2(date.getMonth() + 1)}`);
         }
 
+        function verifieCouverture(ts, duree, h1, m1, h2, m2) {
+            let debut = new Date(ts); let fin = new Date(ts + duree * 60000);
+            let p1 = new Date(ts); p1.setHours(h1, m1, 0);
+            let p2 = new Date(ts); p2.setHours(h2, m2, 0);
+            return (debut <= p1 && fin >= p2);
+        }
+
+        function calculerMinutesDansPlage(ts, duree, startH, endH) {
+            let mins = 0; let d = new Date(ts);
+            for (let i = 0; i < duree; i++) {
+                let h = d.getHours();
+                if (startH > endH) { if (h >= startH || h < endH) mins++; }
+                else { if (h >= startH && h < endH) mins++; }
+                d.setMinutes(d.getMinutes() + 1);
+            }
+            return mins;
+        }
+
+        function determinerFrais(poste) {
+            if (!poste) return { label: "", montant: 0 };
+            const hDebut = parseInt(poste[0].heure.split(':')[0]);
+            let couvreMidi = false, couvreSoir = false, nMinutes = 0;
+            let tags = []; let m = 0;
+            poste.forEach(a => {
+                if (a.type !== 'repos') {
+                    nMinutes += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 22, 7);
+                    if (verifieCouverture(a.timestamp, a.dureeMinutes, 11, 45, 14, 15)) couvreMidi = true;
+                    if (verifieCouverture(a.timestamp, a.dureeMinutes, 18, 45, 21, 15)) couvreSoir = true;
+                }
+            });
+            if (couvreMidi) { tags.push("Midi"); m += settings.tarifs.repasStandard; }
+            if (couvreSoir) { tags.push("Soir"); m += settings.tarifs.repasStandard; }
+            const aDroitRepasUnique = (nMinutes >= 240);
+            if (aDroitRepasUnique) { tags.push("Repas Unique"); m += settings.tarifs.repasNuit; }
+            if (hDebut < 5 && !aDroitRepasUnique) { tags.push("Petit Déjeuner"); m += settings.tarifs.casseCroute; }
+            return { label: tags.join(' + '), montant: m };
+        }
+
         function switchUser() {
             activeUser = document.getElementById('userSelector').value;
             localStorage.setItem('monChrono_activeUser', activeUser);
-            initApp();
-        }
-
-        function switchTachyMode(mode) {
-            tachyMode = mode;
-            const btnR = document.getElementById('modeRonde');
-            const btnJ = document.getElementById('modeJour');
-            if (mode === 'ronde') {
-                btnR.className = "px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all bg-orange-500 text-white";
-                btnJ.className = "px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all text-neutral-500 dark:text-neutral-400";
-            } else {
-                btnJ.className = "px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all bg-orange-500 text-white";
-                btnR.className = "px-3 py-1 rounded-md text-[8px] font-black uppercase transition-all text-neutral-500 dark:text-neutral-400";
-            }
             initApp();
         }
 
@@ -351,13 +377,16 @@
             document.documentElement.classList.toggle('dark', savedTheme === 'dark');
 
             const userKeys = Object.keys(db.users);
+            
             const uSel = document.getElementById('userSelector');
             uSel.innerHTML = userKeys.length > 0 ? "" : `<option value="">AUCUN PROFIL</option>`;
             userKeys.forEach(u => {
-                const opt = document.createElement('option'); opt.value = u; opt.innerText = u.toUpperCase();
+                const opt = document.createElement('option');
+                opt.value = u; opt.innerText = u.toUpperCase();
                 if(u === activeUser) opt.selected = true;
                 uSel.appendChild(opt);
             });
+
             if(!activeUser && userKeys.length > 0) { activeUser = userKeys[0]; localStorage.setItem('monChrono_activeUser', activeUser); uSel.value = activeUser; }
 
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
@@ -386,137 +415,338 @@
             let shift = (firstDay === 0) ? 6 : firstDay - 1;
             for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
 
-            let sMonthTachy = 0, nMonthTachy = 0, fMonthTachy = 0;
-            let countTravailMensuel = 0; 
+            let sMonth = 0, nMonth = 0, fMonth = 0, countTravailMensuel = 0; 
             const daysInMonth = new Date(curY, curM + 1, 0).getDate();
             const civilStart = new Date(curY, curM, 1);
             const civilEnd = new Date(curY, curM + 1, 0);
 
             for(let d=1; d<=daysInMonth; d++) {
-                const dateObj = new Date(curY, curM, d);
                 const dF = `${p2(d)}/${p2(curM + 1)}/${curY}`;
                 const poste = data[dF];
                 const isC = listeConges.includes(dF);
-                const isFerie = estJourFerie(dateObj);
-                const ferieBadge = isFerie ? '<div class="badge-ferie">Férié</div>' : '';
-
-                if(poste && poste.length > 0) {
-                    let sJ_ronde = 0, nJ_ronde = 0;
-                    poste.forEach(a => { if(a.type !== 'repos'){ sJ_ronde += a.dureeMinutes; nJ_ronde += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
-                    if (sJ_ronde > 0) {
-                        countTravailMensuel++;
-                        grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ_ronde/60)}h${p2(sJ_ronde%60)}','${Math.floor(nJ_ronde/60)}h${p2(nJ_ronde%60)}')">${ferieBadge}${d}</div>`;
-                        
-                        const dernierSegment = poste[poste.length - 1];
-                        const finTS = dernierSegment.timestamp + (dernierSegment.dureeMinutes * 60000);
-                        const dateFin = new Date(finTS);
-                        const heureFin = `${p2(dateFin.getHours())}:${p2(dateFin.getMinutes())}`;
-
-                        const row = document.createElement('div'); row.className = "space-y-2 cursor-pointer";
-                        const totalMinutesBarre = poste.reduce((acc, curr) => acc + curr.dureeMinutes, 0);
-                        row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-neutral-500">${dF}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure}-${heureFin} → Tps service ${Math.floor(sJ_ronde/60)}:${p2(sJ_ronde%60)}</p></div><div class="w-full h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden flex border border-black/5 dark:border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/totalMinutesBarre)*100}%"></div>`).join('')}</div>`;
-                        row.onclick = () => showTimelineFromData(d, poste); actList.appendChild(row);
-                    } else { grid.innerHTML += `<div class="day-box rest day-box-border ${isC ? 'conge' : ''}" onclick="toggleConge('${dF}')">${ferieBadge}${d}</div>`; }
-                } else { grid.innerHTML += `<div class="day-box rest day-box-border ${isC ? 'conge' : ''}" onclick="toggleConge('${dF}')">${ferieBadge}${d}</div>`; }
-
-                let finalSJ = 0, finalNJ = 0, finalFJ = 0;
-                if (tachyMode === 'ronde') {
-                    if (poste) {
-                        poste.forEach(a => { if(a.type !== 'repos'){ finalSJ += a.dureeMinutes; finalNJ += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
-                        finalFJ = determinerFrais(poste).montant;
-                    }
+                if(poste) {
+                    countTravailMensuel++; 
+                    let sJ = 0, nJ = 0;
+                    poste.forEach(a => { if(a.type !== 'repos'){ sJ += a.dureeMinutes; nJ += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
+                    sMonth += sJ; nMonth += nJ;
+                    const cF = determinerFrais(poste);
+                    fMonth += cF.montant;
+                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${p2(sJ%60)}','${Math.floor(nJ/60)}h${p2(nJ%60)}')">${d}</div>`;
+                    tBody.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5"><td class="p-3 opacity-50">${p2(d)}/${p2(curM+1)}</td><td class="p-3 font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td><td class="p-3 text-blue-500 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td><td class="p-3 text-emerald-600 font-black">${cF.montant.toFixed(2)}€</td></tr>`;
+                    const row = document.createElement('div'); row.className = "space-y-2 cursor-pointer";
+                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-neutral-500">${dF}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${p2(sJ%60)}</p></div><div class="w-full h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden flex border border-black/5 dark:border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
+                    row.onclick = () => showTimelineFromData(d, poste); actList.appendChild(row);
                 } else {
-                    const startDayTS = new Date(curY, curM, d, 0, 0, 0).getTime();
-                    const endDayTS = new Date(curY, curM, d, 23, 59, 59).getTime();
-                    Object.values(data).forEach(p => {
-                        p.forEach(act => {
-                            const overlapStart = Math.max(act.timestamp, startDayTS);
-                            const overlapEnd = Math.min(act.timestamp + (act.dureeMinutes * 60000), endDayTS);
-                            if (overlapEnd > overlapStart) {
-                                const overlapMins = Math.round((overlapEnd - overlapStart) / 60000);
-                                if (act.type !== 'repos') {
-                                    finalSJ += overlapMins;
-                                    finalNJ += calculerMinutesDansPlage(overlapStart, overlapMins, 21, 6);
-                                }
-                            }
-                        });
-                    });
-                    finalFJ = poste ? determinerFrais(poste).montant : 0;
-                }
-                if (finalSJ > 0 || finalFJ > 0) {
-                    sMonthTachy += finalSJ; nMonthTachy += finalNJ; fMonthTachy += finalFJ;
-                    tBody.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5"><td class="p-3 opacity-50">${p2(d)}/${p2(curM+1)}</td><td class="p-3 font-black">${Math.floor(finalSJ/60)}h${p2(finalSJ%60)}</td><td class="p-3 text-blue-500 font-black">${Math.floor(finalNJ/60)}h${p2(finalNJ%60)}</td><td class="p-3 text-emerald-600 font-black">${finalFJ.toFixed(2)}€</td></tr>`;
+                    grid.innerHTML += `<div class="day-box rest day-box-border ${isC ? 'conge' : ''}" onclick="toggleConge('${dF}')">${d}</div>`;
                 }
             }
 
             document.getElementById('titleAnneeTravail').innerText = "En " + curY;
-            let anneeDebutRef = curM >= 5 ? curY : curY - 1;
-            let anneeFinRef = curM >= 5 ? curY + 1 : curY;
-            document.getElementById('titleAnneeConge').innerText = `Période ${anneeDebutRef}-${anneeFinRef}`;
-            document.getElementById('countTravailAnnuel').innerText = Object.keys(data).filter(date => date.split('/')[2] == curY && data[date].some(a => a.type !== 'repos')).length;
+            let debutSocial, finSocial;
+            if (curM >= 5) { debutSocial = new Date(curY, 5, 1); finSocial = new Date(curY + 1, 4, 31); } 
+            else { debutSocial = new Date(curY - 1, 5, 1); finSocial = new Date(curY, 4, 31); }
+            document.getElementById('titleAnneeConge').innerText = `Depuis le 01/06/${debutSocial.getFullYear()}`;
+
+            let joursTravaillesAnnuels = Object.keys(data).filter(date => date.endsWith('/' + curY)).length;
+            let joursCongesPériode = listeConges.filter(str => { let p = str.split('/'); let dateC = new Date(p[2], p[1]-1, p[0]); return dateC >= debutSocial && dateC <= finSocial; }).length;
+
+            document.getElementById('countTravailAnnuel').innerText = joursTravaillesAnnuels;
             document.getElementById('countTravailMensuel').innerText = countTravailMensuel;
-            document.getElementById('countCongeAnnuel').innerText = (db.users[activeUser]?.conges || []).filter(str => { 
-                let p = str.split('/'); let dateC = new Date(p[2], p[1]-1, p[0]); 
-                return dateC >= new Date(anneeDebutRef, 5, 1) && dateC <= new Date(anneeFinRef, 4, 31); 
-            }).length;
+            document.getElementById('countCongeAnnuel').innerText = joursCongesPériode;
 
             const pDates = getPayrollDates();
             document.getElementById('payrollPeriod').innerText = `Cycle Frais : ${p2(pDates.start.getDate())}/${p2(pDates.start.getMonth()+1)} au ${p2(pDates.end.getDate())}/${p2(pDates.end.getMonth()+1)}`;
             let sumF = 0, sumP = 0;
+
             Object.keys(data).forEach(k => {
                 const parts = k.split('/'); const dt = new Date(parts[2], parts[1]-1, parts[0]);
-                if (data[k].some(a => a.type !== 'repos')) {
-                    if(dt >= pDates.start && dt <= pDates.end) {
-                        const cF = determinerFrais(data[k]);
-                        if(cF.montant > 0) { sumF += cF.montant; fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-600"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${cF.label}</p></div><p class="text-xl font-black">${cF.montant.toFixed(2)}€</p></div>`; }
+                if(dt >= pDates.start && dt <= pDates.end) {
+                    const cF = determinerFrais(data[k]);
+                    if(cF.montant > 0) {
+                        sumF += cF.montant;
+                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-600"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${cF.label}</p></div><p class="text-xl font-black">${cF.montant.toFixed(2)}€</p></div>`;
                     }
-                    if(dt >= civilStart && dt <= civilEnd && (estJourFerie(dt) || dt.getDay() === 0)) {
+                }
+                if(dt >= civilStart && dt <= civilEnd) {
+                    let labelPrime = "";
+                    if(estJourFerie(dt)) labelPrime = "Départ Jour Férié";
+                    else if(dt.getDay() === 0) labelPrime = "Départ Dimanche";
+                    if(labelPrime !== "") {
                         sumP += settings.tarifs.prime;
-                        pList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${estJourFerie(dt) ? "Départ Jour Férié" : "Départ Dimanche"}</p></div><p class="text-xl font-black text-orange-500">${settings.tarifs.prime.toFixed(2)}€</p></div>`;
+                        pList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${labelPrime}</p></div><p class="text-xl font-black text-orange-500">${settings.tarifs.prime.toFixed(2)}€</p></div>`;
                     }
                 }
             });
+
             document.getElementById('totalPayroll').innerText = (sumF + sumP).toFixed(2) + "€";
             document.getElementById('detailPayroll').innerText = `Frais: ${sumF.toFixed(2)}€ | Primes: ${sumP.toFixed(2)}€`;
-            document.getElementById('totalService').innerText = Math.floor(sMonthTachy/60) + "h" + p2(sMonthTachy%60);
-            document.getElementById('totalNuit').innerText = Math.floor(nMonthTachy/60) + "h" + p2(nMonthTachy%60);
-            document.getElementById('totalFraisTachy').innerText = fMonthTachy.toFixed(2) + "€";
+            document.getElementById('totalService').innerText = Math.floor(sMonth/60) + "h" + p2(sMonth%60);
+            document.getElementById('totalNuit').innerText = Math.floor(nMonth/60) + "h" + p2(nMonth%60);
+            document.getElementById('totalFraisTachy').innerText = fMonth.toFixed(2) + "€";
+            
             refreshArchiveList();
         }
 
-        function refreshArchiveList() { const container = document.getElementById('archiveAccordionContainer'); container.innerHTML = ""; const userKeys = Object.keys(db.users); if(userKeys.length === 0) { container.innerHTML = `<p class="text-[9px] font-bold text-neutral-400 uppercase italic text-center py-4">Aucun profil enregistré</p>`; return; } userKeys.forEach(u => { const userData = db.users[u]; const fileCount = (userData.imports || []).length; const accordion = document.createElement('div'); accordion.className = "space-y-2"; accordion.innerHTML = `<div onclick="toggleAccordion('${u}')" class="flex justify-between items-center p-4 bg-neutral-100 dark:bg-neutral-900 rounded-xl cursor-pointer"><div class="flex flex-col"><span class="text-[10px] font-black uppercase dark:text-white">${u}</span><span class="text-[8px] font-bold text-orange-500 uppercase">${fileCount} fichier(s)</span></div><span id="chevron-${u}" class="accordion-chevron text-orange-500">▼</span></div><div id="content-${u}" class="accordion-content space-y-2 px-2">${(userData.imports || []).map((imp, idx) => `<div class="glass-card p-3 flex justify-between items-center bg-white dark:bg-neutral-800/50 border border-black/5 dark:border-white/5"><div class="flex-1 min-w-0 pr-2"><p class="text-[10px] font-bold dark:text-white truncate ${imp.corrupted ? 'text-red-500' : ''}">${imp.fileName}</p><p class="text-[7px] font-bold text-neutral-500 uppercase">${imp.corrupted ? 'NON RECONNU' : 'Période: ' + imp.period}</p></div><button onclick="deleteImportFromArchive('${u}', ${idx})" class="p-2 text-red-500">🗑️</button></div>`).join('')}</div>`; container.appendChild(accordion); }); }
-        function toggleAccordion(userId) { const content = document.getElementById(`content-${userId}`); const chevron = document.getElementById(`chevron-${userId}`); const isOpen = content.classList.contains('open'); document.querySelectorAll('.accordion-content').forEach(el => el.classList.remove('open')); document.querySelectorAll('.accordion-chevron').forEach(el => el.classList.remove('open')); if (!isOpen) { content.classList.add('open'); chevron.classList.add('open'); } }
-        function handleFileSelect(input) { currentFileToProcess = input.files[0]; if (!currentFileToProcess) return; const impSel = document.getElementById('importSelectUser'); const userKeys = Object.keys(db.users); const sectionExisting = document.getElementById('sectionExistingUser'); if (userKeys.length > 0) { sectionExisting.classList.remove('hidden'); impSel.innerHTML = userKeys.map(u => `<option value="${u}">${u.toUpperCase()}</option>`).join(''); } else { sectionExisting.classList.add('hidden'); } document.getElementById('importModal').classList.remove('hidden'); }
-        function confirmImportWithUser() { processCSV(currentFileToProcess, document.getElementById('importSelectUser').value); document.getElementById('importModal').classList.add('hidden'); }
-        function confirmImportWithNewUser() { const name = document.getElementById('importNewUserName').value.trim(); if(!name) { alert("Veuillez saisir un nom"); return; } processCSV(currentFileToProcess, name); document.getElementById('importModal').classList.add('hidden'); }
-        function processCSV(file, userName) { const reader = new FileReader(); reader.onload = function(e) { const text = e.target.result; const rows = text.split('\n'); let newActivities = []; let datesFound = []; let isCorrupted = true; rows.forEach(row => { const cols = row.replace(/"/g, '').split(';'); if (cols.length < 5) return; const dtParts = cols[0].trim().split(' '); if(dtParts.length < 2) return; const dateElements = dtParts[0].split('/'); if(dateElements.length !== 3) return; const [j, m, a] = dateElements.map(Number); const [hh, mm] = dtParts[1].split(':').map(Number); const ts = new Date(a, m - 1, j, hh, mm).getTime(); const duree = cols[4]; if (cols[2].includes("Card") || !duree || !duree.includes(":")) return; isCorrupted = false; datesFound.push(new Date(a, m - 1, j)); newActivities.push({ timestamp: ts, date: dtParts[0], heure: dtParts[1].substring(0,5), type: cols[2].toLowerCase().includes('repos') ? 'repos' : (cols[2].toLowerCase().includes('conduite') ? 'conduite' : 'travail'), label: cols[2], dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1]) }); }); if(!db.users[userName]) db.users[userName] = { activities: {}, conges: [], imports: [] }; if (!isCorrupted) { let datesAffected = new Set(); newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => { if (!db.users[userName].activities[act.date]) db.users[userName].activities[act.date] = []; db.users[userName].activities[act.date].push(act); datesAffected.add(act.date); }); datesFound.sort((a,b) => a - b); db.users[userName].imports.push({ fileName: file.name, period: `${p2(datesFound[0].getDate())}/${p2(datesFound[0].getMonth()+1)} au ${p2(datesFound[datesFound.length-1].getDate())}/${p2(datesFound[datesFound.length-1].getMonth()+1)}`, dates: Array.from(datesAffected), corrupted: false }); } else { db.users[userName].imports.push({ fileName: file.name, dates: [], corrupted: true }); } activeUser = userName; localStorage.setItem('monChrono_multiprofil', JSON.stringify(db)); localStorage.setItem('monChrono_activeUser', activeUser); initApp(); navTo('dashboard'); }; reader.readAsText(file); }
-        function deleteImportFromArchive(userName, index) { if (!confirm(`Supprimer ce fichier ?`)) return; const imp = db.users[userName].imports[index]; if (imp.dates) imp.dates.forEach(d => delete db.users[userName].activities[d]); db.users[userName].imports.splice(index, 1); localStorage.setItem('monChrono_multiprofil', JSON.stringify(db)); initApp(); }
-        function toggleConge(d) { if(!activeUser) return; let list = db.users[activeUser].conges || []; if (list.includes(d)) list = list.filter(x => x !== d); else list.push(d); db.users[activeUser].conges = list; localStorage.setItem('monChrono_multiprofil', JSON.stringify(db)); initApp(); }
-        function saveSettings() { settings.cycleType = document.getElementById('cycleType').value; settings.cycleDay = parseInt(document.getElementById('cycleDay').value) || 15; settings.tarifs.casseCroute = parseFloat(document.getElementById('valCasseCroute').value); settings.tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value); settings.tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value); settings.tarifs.prime = parseFloat(document.getElementById('valPrime').value); localStorage.setItem('monChrono_settings', JSON.stringify(settings)); initApp(); alert("Enregistré !"); }
+        function refreshArchiveList() {
+            const container = document.getElementById('archiveAccordionContainer');
+            container.innerHTML = "";
+            const userKeys = Object.keys(db.users);
+
+            if(userKeys.length === 0) {
+                container.innerHTML = `<p class="text-[9px] font-bold text-neutral-400 uppercase italic text-center py-4">Aucun profil enregistré</p>`;
+                return;
+            }
+
+            userKeys.forEach(u => {
+                const userData = db.users[u];
+                const fileCount = (userData.imports || []).length;
+                
+                const accordion = document.createElement('div');
+                accordion.className = "space-y-2";
+                
+                accordion.innerHTML = `
+                    <div onclick="toggleAccordion('${u}')" class="flex justify-between items-center p-4 bg-neutral-100 dark:bg-neutral-900 rounded-xl cursor-pointer">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-black uppercase dark:text-white">${u}</span>
+                            <span class="text-[8px] font-bold text-orange-500 uppercase">${fileCount} fichier(s)</span>
+                        </div>
+                        <span id="chevron-${u}" class="accordion-chevron text-orange-500">▼</span>
+                    </div>
+                    <div id="content-${u}" class="accordion-content space-y-2 px-2">
+                        ${(userData.imports || []).map((imp, idx) => `
+                            <div class="glass-card p-3 flex justify-between items-center bg-white dark:bg-neutral-800/50 border border-black/5 dark:border-white/5">
+                                <div class="flex-1 min-w-0 pr-2">
+                                    <p class="text-[10px] font-bold dark:text-white truncate ${imp.corrupted ? 'text-red-500' : ''}">${imp.fileName}</p>
+                                    <p class="text-[7px] font-bold text-neutral-500 uppercase">
+                                        ${imp.corrupted ? 'FICHIER NON RECONNU / CORROMPU' : 'Période: ' + imp.period}
+                                    </p>
+                                </div>
+                                <button onclick="deleteImportFromArchive('${u}', ${idx})" class="p-2 text-red-500">🗑️</button>
+                            </div>
+                        `).join('')}
+                        ${fileCount === 0 ? '<p class="text-[8px] text-center text-neutral-500 italic py-2">Aucun fichier</p>' : ''}
+                    </div>
+                `;
+                container.appendChild(accordion);
+            });
+        }
+
+        function toggleAccordion(userId) {
+            const content = document.getElementById(`content-${userId}`);
+            const chevron = document.getElementById(`chevron-${userId}`);
+            const isOpen = content.classList.contains('open');
+            
+            document.querySelectorAll('.accordion-content').forEach(el => el.classList.remove('open'));
+            document.querySelectorAll('.accordion-chevron').forEach(el => el.classList.remove('open'));
+            
+            if (!isOpen) {
+                content.classList.add('open');
+                chevron.classList.add('open');
+            }
+        }
+
+        function handleFileSelect(input) {
+            currentFileToProcess = input.files[0]; 
+            if (!currentFileToProcess) return;
+            const impSel = document.getElementById('importSelectUser');
+            const userKeys = Object.keys(db.users);
+            const sectionExisting = document.getElementById('sectionExistingUser');
+            if (userKeys.length > 0) {
+                sectionExisting.classList.remove('hidden');
+                impSel.innerHTML = userKeys.map(u => `<option value="${u}">${u.toUpperCase()}</option>`).join('');
+            } else {
+                sectionExisting.classList.add('hidden');
+            }
+            document.getElementById('importModal').classList.remove('hidden');
+        }
+
+        function confirmImportWithUser() {
+            const name = document.getElementById('importSelectUser').value;
+            processCSV(currentFileToProcess, name);
+            document.getElementById('importModal').classList.add('hidden');
+        }
+
+        function confirmImportWithNewUser() {
+            const name = document.getElementById('importNewUserName').value.trim();
+            if(!name) { alert("Veuillez saisir un nom pour le nouveau profil"); return; }
+            processCSV(currentFileToProcess, name);
+            document.getElementById('importModal').classList.add('hidden');
+            document.getElementById('importNewUserName').value = "";
+        }
+
+        function processCSV(file, userName) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result; const rows = text.split('\n');
+                let newActivities = [];
+                let datesFound = [];
+                let isCorrupted = true;
+
+                rows.forEach(row => {
+                    const cols = row.replace(/"/g, '').split(';'); if (cols.length < 5) return;
+                    const dtParts = cols[0].trim().split(' '); if(dtParts.length < 2) return;
+                    const dateElements = dtParts[0].split('/');
+                    if(dateElements.length !== 3) return;
+                    
+                    const [j, m, a] = dateElements.map(Number);
+                    const [hh, mm] = dtParts[1].split(':').map(Number);
+                    const ts = new Date(a, m - 1, j, hh, mm).getTime();
+                    const duree = cols[4]; 
+                    if (cols[2].includes("Card") || !duree || !duree.includes(":")) return;
+                    
+                    isCorrupted = false;
+                    datesFound.push(new Date(a, m - 1, j));
+                    newActivities.push({
+                        timestamp: ts, date: dtParts[0], heure: dtParts[1].substring(0,5),
+                        type: cols[2].toLowerCase().includes('repos') ? 'repos' : (cols[2].toLowerCase().includes('conduite') ? 'conduite' : 'travail'),
+                        label: cols[2], dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
+                    });
+                });
+
+                if(!db.users[userName]) db.users[userName] = { activities: {}, conges: [], imports: [] };
+                if(!db.users[userName].imports) db.users[userName].imports = [];
+
+                if (!isCorrupted) {
+                    let datesAffected = new Set();
+                    const userPostes = db.users[userName].activities;
+                    let currentP = null;
+                    newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
+                        if (act.type !== 'repos') {
+                            if (!currentP) { currentP = act.date; userPostes[currentP] = []; }
+                            userPostes[currentP].push(act);
+                            datesAffected.add(act.date);
+                        } else if (act.dureeMinutes > 420) { currentP = null; }
+                        else if (currentP) { userPostes[currentP].push(act); datesAffected.add(currentP); }
+                    });
+                    
+                    datesFound.sort((a,b) => a - b);
+                    const startD = datesFound[0];
+                    const endD = datesFound[datesFound.length - 1];
+                    
+                    db.users[userName].imports.push({
+                        fileName: file.name,
+                        profil: userName,
+                        importDate: new Date().toLocaleDateString('fr-FR'),
+                        period: `${p2(startD.getDate())}/${p2(startD.getMonth()+1)} au ${p2(endD.getDate())}/${p2(endD.getMonth()+1)}`,
+                        dates: Array.from(datesAffected),
+                        corrupted: false
+                    });
+                    alert("Importation réussie !");
+                } else {
+                    db.users[userName].imports.push({
+                        fileName: file.name,
+                        profil: userName,
+                        importDate: new Date().toLocaleDateString('fr-FR'),
+                        dates: [],
+                        corrupted: true
+                    });
+                    alert("Attention : Le fichier n'a pas pu être lu. Il est ajouté en tant que fichier corrompu pour que vous puissiez le supprimer dans les paramètres.");
+                }
+
+                activeUser = userName;
+                localStorage.setItem('monChrono_multiprofil', JSON.stringify(db));
+                localStorage.setItem('monChrono_activeUser', activeUser);
+                initApp(); navTo('dashboard');
+            };
+            reader.readAsText(file);
+        }
+
+        function deleteImportFromArchive(userName, index) {
+            if (!confirm(`Voulez-vous supprimer ce fichier pour le profil ${userName.toUpperCase()} ?`)) return;
+            const userData = db.users[userName];
+            if (!userData || !userData.imports[index]) return;
+            
+            const importRecord = userData.imports[index];
+            if (importRecord.dates) {
+                importRecord.dates.forEach(dateStr => { delete userData.activities[dateStr]; });
+            }
+            userData.imports.splice(index, 1);
+            
+            if (userData.imports.length === 0) {
+                if(confirm(`Le profil ${userName.toUpperCase()} n'a plus de fichiers. Supprimer définitivement le profil ?`)) {
+                    delete db.users[userName];
+                    const remainingUsers = Object.keys(db.users);
+                    activeUser = remainingUsers.length > 0 ? remainingUsers[0] : "";
+                    localStorage.setItem('monChrono_activeUser', activeUser);
+                }
+            }
+            
+            localStorage.setItem('monChrono_multiprofil', JSON.stringify(db));
+            initApp();
+        }
+
+        function toggleConge(d) { 
+            if(!activeUser) return;
+            let list = db.users[activeUser].conges || [];
+            if (list.includes(d)) { list = list.filter(x => x !== d); } 
+            else { list.push(d); } 
+            db.users[activeUser].conges = list;
+            localStorage.setItem('monChrono_multiprofil', JSON.stringify(db)); 
+            initApp(); 
+        }
+
+        function showHistoriqueConges() {
+            if(!activeUser) return;
+            let debutSocial, finSocial;
+            if (curM >= 5) { debutSocial = new Date(curY, 5, 1); finSocial = new Date(curY + 1, 4, 31); } 
+            else { debutSocial = new Date(curY - 1, 5, 1); finSocial = new Date(curY, 4, 31); }
+            let datesObj = (db.users[activeUser].conges || []).map(str => {
+                let p = str.split('/'); return { str: str, date: new Date(p[2], p[1]-1, p[0]) };
+            }).filter(obj => obj.date >= debutSocial && obj.date <= finSocial).sort((a, b) => a.date - b.date);
+            if (datesObj.length === 0) { alert("Aucun congé sur cette période."); return; }
+            let groupes = [], currentGroup = [datesObj[0]];
+            for (let i = 1; i < datesObj.length; i++) {
+                let prev = datesObj[i-1].date, next = datesObj[i].date, temp = new Date(prev);
+                temp.setDate(temp.getDate() + 1);
+                let cont = true;
+                while (temp < next) { if (temp.getDay() !== 0 && !estJourFerie(temp)) { cont = false; break; } temp.setDate(temp.getDate() + 1); }
+                if (cont) currentGroup.push(datesObj[i]); else { groupes.push(currentGroup); currentGroup = [datesObj[i]]; }
+            }
+            groupes.push(currentGroup);
+            let html = `<div class="space-y-3">`;
+            groupes.forEach(g => {
+                html += `<div class="glass-card p-4 border-l-4 border-emerald-500">
+                    <p class="text-[9px] font-black text-neutral-500 uppercase italic">${g.length} j. posés</p>
+                    <p class="text-sm font-black dark:text-white">${g.length > 1 ? 'Du '+g[0].str.split('/20')[0]+' au '+g[g.length-1].str.split('/20')[0] : 'Le '+g[0].str}</p>
+                </div>`;
+            });
+            document.getElementById('modalDate').innerText = "Congés " + debutSocial.getFullYear() + "/" + finSocial.getFullYear();
+            document.getElementById('modalBody').innerHTML = html + "</div>";
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
+
+        function saveSettings() {
+            settings.cycleType = document.getElementById('cycleType').value;
+            settings.cycleDay = parseInt(document.getElementById('cycleDay').value) || 15;
+            settings.tarifs.casseCroute = parseFloat(document.getElementById('valCasseCroute').value) || 0;
+            settings.tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value) || 0;
+            settings.tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value) || 0;
+            settings.tarifs.prime = parseFloat(document.getElementById('valPrime').value) || 0;
+            localStorage.setItem('monChrono_settings', JSON.stringify(settings));
+            initApp(); alert("Réglages enregistrés !");
+        }
+
         function toggleSidebar(f) { const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; } s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; }
         function navTo(id) { document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden')); document.getElementById('view-' + id).classList.remove('hidden'); toggleSidebar(false); }
         function setTab(t) { document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); }
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
         function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-        function clearAllData() { if(confirm("Tout supprimer ?")) { localStorage.clear(); location.reload(); } }
-        function showHeures(d, s, n) { document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM]; document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div><p class="text-xs font-black text-neutral-500 uppercase italic">Service</p><p class="dark:text-white font-black text-xl italic uppercase">${s}</p></div><div><p class="text-xs font-black text-blue-500 uppercase italic">Nuit</p><p class="text-blue-500 font-black text-xl italic uppercase">${n}</p></div></div>`; document.getElementById('dayModal').classList.remove('hidden'); }
-        
-        function showTimelineFromData(d, segments) { 
-            document.getElementById('modalDate').innerText = "Détail du " + p2(d) + " " + moisNoms[curM] + " " + curY; 
-            let html = '<div class="space-y-3">'; 
-            segments.forEach(x => { 
-                const color = x.type === 'conduite' ? '#10b981' : (x.type === 'travail' ? '#f59e0b' : '#ef4444'); 
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
-            }); 
-            document.getElementById('modalBody').innerHTML = html + '</div>'; 
+        function clearAllData() { if(confirm("Attention : Cela va supprimer TOUS les profils et tous les fichiers. Continuer ?")) { localStorage.clear(); location.reload(); } }
+        function showHeures(d, s, n) { 
+            document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM]; 
+            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div><p class="text-[10px] font-black text-neutral-500 uppercase italic">Temps de service</p><p class="dark:text-white font-black text-xl italic uppercase">${s}</p></div><div><p class="text-[10px] font-black text-blue-500 uppercase italic">Temps de Nuit</p><p class="text-blue-500 font-black text-xl italic uppercase">${n}</p></div></div>`; 
             document.getElementById('dayModal').classList.remove('hidden'); 
         }
-
-        function verifieCouverture(ts, duree, h1, m1, h2, m2) { let debut = new Date(ts); let fin = new Date(ts + duree * 60000); let p1 = new Date(ts); p1.setHours(h1, m1, 0); let p2 = new Date(ts); p2.setHours(h2, m2, 0); return (debut <= p1 && fin >= p2); }
-        function calculerMinutesDansPlage(ts, duree, startH, endH) { let mins = 0; let d = new Date(ts); for (let i = 0; i < duree; i++) { let h = d.getHours(); if (startH > endH) { if (h >= startH || h < endH) mins++; } else { if (h >= startH && h < endH) mins++; } d.setMinutes(d.getMinutes() + 1); } return mins; }
-        function determinerFrais(poste) { if (!poste) return { label: "", montant: 0 }; const hDebut = parseInt(poste[0].heure.split(':')[0]); let couvreMidi = false, couvreSoir = false, nMinutes = 0, m = 0, tags = []; poste.forEach(a => { if (a.type !== 'repos') { nMinutes += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 22, 7); if (verifieCouverture(a.timestamp, a.dureeMinutes, 11, 45, 14, 15)) couvreMidi = true; if (verifieCouverture(a.timestamp, a.dureeMinutes, 18, 45, 21, 15)) couvreSoir = true; } }); if (couvreMidi) { tags.push("Midi"); m += settings.tarifs.repasStandard; } if (couvreSoir) { tags.push("Soir"); m += settings.tarifs.repasStandard; } const aDroitRepasUnique = (nMinutes >= 240); if (aDroitRepasUnique) { tags.push("Repas Unique"); m += settings.tarifs.repasNuit; } if (hDebut < 5 && !aDroitRepasUnique) { tags.push("Petit Déjeuner"); m += settings.tarifs.casseCroute; } return { label: tags.join(' + '), montant: m }; }
-        function showHistoriqueConges() { if(!activeUser) return; let anneeDebutRef = curM >= 5 ? curY : curY - 1; let anneeFinRef = curM >= 5 ? curY + 1 : curY; let datesObj = (db.users[activeUser].conges || []).map(str => { let p = str.split('/'); return { str: str, date: new Date(p[2], p[1]-1, p[0]) }; }).filter(obj => obj.date >= new Date(anneeDebutRef, 5, 1) && obj.date <= new Date(anneeFinRef, 4, 31)).sort((a, b) => a.date - b.date); if (datesObj.length === 0) { alert("Aucun congé."); return; } let groupes = [], currentGroup = [datesObj[0]]; for (let i = 1; i < datesObj.length; i++) { let prev = datesObj[i-1].date, next = datesObj[i].date, temp = new Date(prev); temp.setDate(temp.getDate() + 1); let cont = true; while (temp < next) { if (temp.getDay() !== 0 && !estJourFerie(temp)) { cont = false; break; } temp.setDate(temp.getDate() + 1); } if (cont) currentGroup.push(datesObj[i]); else { groupes.push(currentGroup); currentGroup = [datesObj[i]]; } } groupes.push(currentGroup); let html = `<div class="space-y-3">`; groupes.forEach(g => html += `<div class="glass-card p-4 border-l-4 border-emerald-500"><p class="text-[9px] font-black text-neutral-500 uppercase italic">${g.length} j.</p><p class="text-sm font-black dark:text-white">${g.length > 1 ? 'Du '+g[0].str.split('/20')[0]+' au '+g[g.length-1].str.split('/20')[0] : 'Le '+g[0].str}</p></div>`); document.getElementById('modalDate').innerText = "Congés " + anneeDebutRef + "-" + anneeFinRef; document.getElementById('modalBody').innerHTML = html + "</div>"; document.getElementById('dayModal').classList.remove('hidden'); }
+        function showTimelineFromData(d, segments) {
+            document.getElementById('modalDate').innerText = "Détail du " + p2(d) + " " + moisNoms[curM];
+            let html = '<div class="space-y-3">';
+            segments.forEach(x => { 
+                const color = x.type === 'conduite' ? '#10b981' : (x.type === 'travail' ? '#f59e0b' : '#ef4444');
+                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
+            });
+            document.getElementById('modalBody').innerHTML = html + '</div>';
+            document.getElementById('dayModal').classList.remove('hidden');
+        }
     </script>
 </body>
 </html>
-
