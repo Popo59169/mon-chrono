@@ -407,6 +407,12 @@
             document.getElementById('totalService').innerText = Math.floor(sMonth/60) + "h" + p2(sMonth%60);
             document.getElementById('totalNuit').innerText = Math.floor(nMonth/60) + "h" + p2(nMonth%60);
             document.getElementById('totalFraisTachy').innerText = fMonth.toFixed(2) + "€";
+            
+            // Mise à jour des compteurs annuels
+            let joursTravaillesAnnuels = Object.keys(data).filter(k => k.endsWith('/' + curY)).length;
+            let joursCongesAnnuels = listeConges.filter(k => k.endsWith('/' + curY)).length;
+            document.getElementById('countTravailAnnuel').innerText = joursTravaillesAnnuels;
+            document.getElementById('countCongeAnnuel').innerText = joursCongesAnnuels;
         }
 
         function saveSettings() {
@@ -459,11 +465,20 @@
         function navTo(id) { document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden')); document.getElementById('view-' + id).classList.remove('hidden'); toggleSidebar(false); }
         function setTab(t) { document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); }
         function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
-        function toggleConge(d) { if (listeConges.includes(d)) { listeConges = listeConges.filter(x => x !== d); } else { listeConges.push(d); } localStorage.setItem('monChrono_conges', JSON.stringify(listeConges)); initApp(); }
+        
+        function toggleConge(d) { 
+            if (listeConges.includes(d)) { 
+                listeConges = listeConges.filter(x => x !== d); 
+            } else { 
+                listeConges.push(d); 
+            } 
+            localStorage.setItem('monChrono_conges', JSON.stringify(listeConges)); 
+            initApp(); 
+        }
+
         function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
         function clearAllData() { if(confirm("Effacer tout ?")) { localStorage.clear(); location.reload(); } }
         
-        // MODIFICATION ICI : "Temps de service"
         function showHeures(d, s, n) { 
             document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM]; 
             document.getElementById('modalBody').innerHTML = `
