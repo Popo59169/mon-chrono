@@ -1,21 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Tachy</title>
+    <title>Tachy - Version Intégrale</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
-    <script>
-      (function() {
-        const theme = localStorage.getItem('monChrono_theme') || 'auto';
-        if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-        }
-      })();
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class' }
+        if (localStorage.getItem('monChrono_theme') === 'dark' || (!localStorage.getItem('monChrono_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
     </script>
     <style>
         .dark body { background-color: #0a0a0a; color: #eeeeee; }
@@ -34,6 +29,7 @@
         .worked { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: white; }
         .conge { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; color: white !important; border: 1px solid #065f46; }
         
+        .badge-ferie { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; font-size: 6px; padding: 1px 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .empty { visibility: hidden; }
         .day-header { text-align: center; font-size: 10px; font-weight: 900; color: #f97316; padding-bottom: 8px; font-style: italic; }
         
@@ -48,7 +44,6 @@
         
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
         .tab-active { background: #f97316 !important; color: white !important; }
-        .hidden { display: none !important; }
         
         .timeline-item { border-left: 2px solid #374151; padding-left: 15px; position: relative; padding-bottom: 15px; }
         .timeline-dot { position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; }
@@ -67,42 +62,40 @@
         .import-input { width: 100%; padding: 1rem; background: #f3f4f6; border-radius: 0.75rem; font-weight: 800; text-transform: uppercase; font-style: italic; border: none; outline: none; font-size: 0.8rem; }
         .dark .import-input { background: #0a0a0a; color: white; }
 
-        /* Accordion Style */
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 1000px; }
         .accordion-chevron { transition: transform 0.3s; }
         .accordion-chevron.open { transform: rotate(180deg); }
     </style>
 </head>
-<body onload="initApp()">
+<body onload="App.init()">
 
-    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
-
+    <div id="overlay" class="overlay" onclick="Dom.toggleSidebar(false)"></div>
     <div id="sidebar" class="sidebar p-6">
         <h2 class="text-orange-500 font-black italic uppercase text-2xl mb-10">Menu</h2>
         <nav class="flex flex-col gap-3">
-            <button onclick="navTo('dashboard')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">📊 Dashboard</button>
-            <button onclick="navTo('activities')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">🚛 Activités</button>
-            <button onclick="navTo('frais')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">💰 Frais & Primes</button>
-            <button onclick="navTo('import')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">📥 Importation</button>
-            <button onclick="navTo('settings')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-neutral-500 border-t border-black/5 mt-4 text-sm">⚙️ Paramètres</button>
+            <button onclick="Dom.navTo('dashboard')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">📊 Dashboard</button>
+            <button onclick="Dom.navTo('activities')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">🚛 Activités</button>
+            <button onclick="Dom.navTo('frais')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">💰 Frais & Primes</button>
+            <button onclick="Dom.navTo('import')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-sm">📥 Importation</button>
+            <button onclick="Dom.navTo('settings')" class="w-full text-left p-4 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl font-bold uppercase italic text-neutral-500 border-t border-black/5 mt-4 text-sm">⚙️ Paramètres</button>
         </nav>
     </div>
 
     <header class="p-6 flex flex-col gap-4 sticky top-0 z-50">
         <div class="flex items-center gap-4">
-            <div onclick="toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
+            <div onclick="Dom.toggleSidebar()" class="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg text-2xl cursor-pointer">🚛</div>
             <div>
                 <h1 class="text-xl font-black italic uppercase leading-none dark:text-white text-neutral-800">Mon <span class="text-orange-500">Chrono</span></h1>
                 <div class="flex items-center">
-                    <select id="userSelector" onchange="switchUser()" class="minimal-select"></select>
+                    <select id="userSelector" onchange="App.switchUser(this.value)" class="minimal-select"></select>
                 </div>
             </div>
         </div>
         <div id="monthNav" class="flex justify-between items-center bg-white dark:bg-neutral-900 p-2 rounded-xl shadow-sm">
-            <button onclick="changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
+            <button onclick="App.changeMonth(-1)" class="p-2 text-orange-500 font-black text-xl">◀</button>
             <span id="currentMonthDisplay" class="font-black italic uppercase text-sm tracking-widest dark:text-white">---</span>
-            <button onclick="changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
+            <button onclick="App.changeMonth(1)" class="p-2 text-orange-500 font-black text-xl">▶</button>
         </div>
     </header>
 
@@ -110,7 +103,7 @@
         <div id="view-dashboard" class="page-view">
             <div class="glass-card p-6 mb-6 border-b-4 border-orange-500 flex justify-around items-center">
                 <div class="text-center">
-                    <p id="titleAnneeTravail" class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">En ---</p>
+                    <p id="titleAnneeTravail" class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">---</p>
                     <p id="countTravailAnnuel" class="text-3xl font-black italic text-orange-500">0</p>
                     <p class="text-[8px] font-bold dark:text-white uppercase mt-1">Jours travaillés</p>
                 </div>
@@ -121,16 +114,16 @@
                     <p class="text-[8px] font-bold dark:text-white uppercase mt-1">Jours travaillés</p>
                 </div>
                 <div class="w-[1px] h-10 bg-black/10 dark:bg-white/10"></div>
-                <div class="text-center cursor-pointer active:scale-95 transition-transform" onclick="showHistoriqueConges()">
+                <div class="text-center cursor-pointer active:scale-95 transition-transform" onclick="App.showHistoriqueConges()">
                     <p id="titleAnneeConge" class="text-[9px] font-black text-neutral-500 uppercase italic mb-1">Période ---</p>
                     <p id="countCongeAnnuel" class="text-3xl font-black italic text-emerald-500">0</p>
-                    <p class="text-[8px] font-bold dark:text-white uppercase mt-1">Congés pris</p>
+                    <p id="countSamedisAnnuel" class="text-[8px] font-bold dark:text-white uppercase mt-1 text-emerald-600">0 / 5 samedis</p>
                 </div>
             </div>
 
             <div class="flex gap-2 mb-6">
-                <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black tab-active uppercase italic shadow-sm">Calendrier</button>
-                <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black uppercase italic dark:text-white shadow-sm">Tachygraphe</button>
+                <button id="btnCal" onclick="Dom.setTab('cal')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black tab-active uppercase italic shadow-sm">Calendrier</button>
+                <button id="btnTachy" onclick="Dom.setTab('tachy')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black uppercase italic dark:text-white shadow-sm">Tachygraphe</button>
             </div>
 
             <div id="sec-cal" class="glass-card p-5">
@@ -139,6 +132,13 @@
             </div>
 
             <div id="sec-tachy" class="hidden glass-card overflow-hidden">
+                <div class="p-3 bg-neutral-50 dark:bg-neutral-800/50 flex justify-between items-center border-b border-black/5">
+                    <span class="text-[9px] font-black uppercase italic text-neutral-500">Mode d'affichage</span>
+                    <div class="flex bg-neutral-200 dark:bg-neutral-900 p-1 rounded-lg">
+                        <button id="modeService" onclick="App.setTachyMode('service')" class="px-3 py-1 text-[8px] font-black uppercase rounded-md tab-active">Tournée</button>
+                        <button id="modeCivil" onclick="App.setTachyMode('civil')" class="px-3 py-1 text-[8px] font-black uppercase rounded-md text-neutral-500">Jour Civil</button>
+                    </div>
+                </div>
                 <table class="w-full text-[10px] text-left border-collapse">
                     <thead class="bg-neutral-100 dark:bg-neutral-800 text-orange-500 font-black uppercase italic">
                         <tr><th class="p-3">Date</th><th class="p-3">Service</th><th class="p-3">Nuit</th><th class="p-3">Frais</th></tr>
@@ -167,14 +167,12 @@
                     <p id="detailPayroll" class="text-[8px] font-bold text-neutral-500 uppercase">---</p>
                 </div>
             </div>
-            
             <div class="space-y-2">
                 <h3 class="text-[10px] font-black uppercase text-orange-500 italic">Détail des Frais (Cycle choisi)</h3>
                 <div id="fraisList" class="space-y-2"></div>
             </div>
-
             <div class="space-y-2 pt-4">
-                <h3 class="text-[10px] font-black uppercase text-orange-500 italic">Primes Dimanches & Fériés (Mois Civil)</h3>
+                <h3 class="text-[10px] font-black uppercase text-orange-500 italic">Primes Dimanches & Fériés</h3>
                 <div id="primesList" class="space-y-2"></div>
             </div>
         </div>
@@ -185,7 +183,7 @@
                 <div class="w-full border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl p-8 flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900 cursor-pointer" onclick="document.getElementById('fileInput').click()">
                     <span class="text-3xl mb-2">📥</span>
                     <p class="text-[9px] font-bold text-neutral-500 uppercase text-center">Sélectionner fichier</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
+                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="App.handleFileSelect(this)">
                 </div>
             </div>
         </div>
@@ -197,556 +195,601 @@
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] font-black uppercase dark:text-white italic">Mode Sombre</span>
                         <label class="switch">
-                            <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                            <input type="checkbox" id="themeToggle" onchange="App.toggleTheme()">
                             <span class="slider"></span>
                         </label>
                     </div>
                 </div>
-
                 <hr class="opacity-10">
-
                 <div class="space-y-4">
-                    <h3 class="text-orange-500 font-black italic uppercase text-xs">FRAIS</h3>
-                    
+                    <h3 class="text-orange-500 font-black italic uppercase text-xs">Calcul des Frais</h3>
                     <div class="flex flex-col gap-2">
                         <label class="text-[10px] font-black uppercase text-neutral-500 italic">plage de frais</label>
-                        <select id="cycleType" onchange="toggleCycleDay()" class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl text-[10px] font-bold dark:text-white border-none">
+                        <select id="cycleType" onchange="Dom.toggleCycleDayVisibility()" class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl text-[10px] font-bold dark:text-white border-none">
                             <option value="civil">Mois Civil (1er au 31)</option>
                             <option value="prev_curr">Mois Précédent → Actuel</option>
                             <option value="curr_next">Mois Actuel → Suivant</option>
                         </select>
                     </div>
-
                     <div id="daySelectorGroup" class="flex justify-between items-center py-2 hidden">
-                        <span class="text-[10px] font-black uppercase italic dark:text-white">Jour charnière (ex: 15)</span>
+                        <span class="text-[10px] font-black uppercase italic dark:text-white">Jour charnière</span>
                         <input type="number" id="cycleDay" min="1" max="31" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-16 dark:text-white font-bold">
                     </div>
-
-                    <hr class="border-black/10 dark:border-white/10 my-4">
-                    <h3 class="text-neutral-500 font-black italic uppercase text-[10px] mb-2">Montant des indemnités</h3>
-
-                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Petit Déjeuner</span><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
-                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Unique</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
-                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Jour</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
-                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Prime Dimanche / Férié</span><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                    <p class="text-[10px] font-black uppercase text-neutral-500 italic mt-4 mb-2">montant des indemnités</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col"><label class="text-[8px] font-black text-neutral-500 uppercase">P.Déjeuner</label><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded dark:text-white font-bold"></div>
+                        <div class="flex flex-col"><label class="text-[8px] font-black text-neutral-500 uppercase">Repas Unique</label><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded dark:text-white font-bold"></div>
+                        <div class="flex flex-col"><label class="text-[8px] font-black text-neutral-500 uppercase">R. Midi/Soir</label><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded dark:text-white font-bold"></div>
+                        <div class="flex flex-col"><label class="text-[8px] font-black text-neutral-500 uppercase">Prime Dim/Fér</label><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded dark:text-white font-bold"></div>
+                    </div>
                 </div>
-
                 <hr class="opacity-10">
-
                 <div class="space-y-4">
-                    <h3 class="text-orange-500 font-black italic uppercase text-xs">Gestion des Archives</h3>
-                    <div id="archiveAccordionContainer" class="space-y-3">
-                        </div>
-                    <button onclick="clearAllData()" class="w-full mt-2 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic">🗑️ Réinitialiser l'application</button>
+                    <h3 class="text-orange-500 font-black italic uppercase text-xs">Archives</h3>
+                    <div id="archiveAccordionContainer" class="space-y-3"></div>
+                    <button onclick="App.clearAllData()" class="w-full mt-2 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic">🗑️ Réinitialiser tout</button>
                 </div>
-
-                <button onclick="saveSettings()" class="w-full bg-emerald-700 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg">Enregistrer</button>
+                <button onclick="App.saveSettings()" class="w-full bg-emerald-700 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg">Enregistrer les réglages</button>
             </div>
         </div>
     </main>
 
     <div id="dayModal" class="hidden fixed inset-0 z-[1100] flex items-end justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="glass-card w-full max-w-md p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="Dom.closeModal('dayModal')"></div>
+        <div class="glass-card w-full max-w-md p-8 relative border-t-4 border-orange-500 max-h-[80vh] overflow-y-auto shadow-2xl">
             <h3 id="modalDate" class="text-2xl font-black italic mb-6 uppercase text-orange-500"></h3>
             <div id="modalBody"></div>
-            <button onclick="closeModal()" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs text-white">Fermer</button>
+            <button onclick="Dom.closeModal('dayModal')" class="w-full mt-6 py-4 bg-orange-600 rounded-2xl font-black uppercase text-xs text-white">Fermer</button>
         </div>
     </div>
 
     <div id="importModal" class="hidden fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-black/90">
         <div class="glass-card w-full max-w-sm p-8 border-t-4 border-orange-500">
             <h3 class="text-xl font-black italic uppercase mb-4 text-orange-500">Importation</h3>
-            
             <div id="sectionExistingUser" class="space-y-4">
-                <p class="text-[10px] font-bold text-neutral-500 uppercase">Choisir un profil existant :</p>
+                <p class="text-[10px] font-bold text-neutral-500 uppercase">Choisir un profil :</p>
                 <select id="importSelectUser" class="import-input"></select>
-                <button onclick="confirmImportWithUser()" class="w-full py-3 bg-emerald-600 text-white font-black uppercase rounded-2xl text-[10px]">Valider pour ce profil</button>
-                
-                <div class="flex items-center gap-4 my-4">
-                    <hr class="flex-1 opacity-20">
-                    <span class="text-[8px] font-bold text-neutral-500 uppercase">OU</span>
-                    <hr class="flex-1 opacity-20">
-                </div>
+                <button onclick="App.confirmImport(false)" class="w-full py-3 bg-emerald-600 text-white font-black uppercase rounded-2xl text-[10px]">Importer sur ce profil</button>
+                <div class="flex items-center gap-4 my-4"><hr class="flex-1 opacity-20"><span class="text-[8px] font-bold text-neutral-500 uppercase">OU</span><hr class="flex-1 opacity-20"></div>
             </div>
-
             <div id="sectionNewUser" class="space-y-4">
-                <p class="text-[10px] font-bold text-neutral-500 uppercase">Créer un nouveau profil :</p>
+                <p class="text-[10px] font-bold text-neutral-500 uppercase">Nouveau profil :</p>
                 <input type="text" id="importNewUserName" placeholder="NOM DU CONDUCTEUR" class="import-input">
-                <button onclick="confirmImportWithNewUser()" class="w-full py-3 bg-orange-600 text-white font-black uppercase rounded-2xl text-[10px]">Créer et Importer</button>
+                <button onclick="App.confirmImport(true)" class="w-full py-3 bg-orange-600 text-white font-black uppercase rounded-2xl text-[10px]">Créer et Importer</button>
             </div>
-            
-            <button onclick="document.getElementById('importModal').classList.add('hidden')" class="w-full mt-4 text-[8px] font-bold text-neutral-500 uppercase italic">Annuler</button>
+            <button onclick="Dom.closeModal('importModal')" class="w-full mt-4 text-[8px] font-bold text-neutral-500 uppercase italic">Annuler</button>
         </div>
     </div>
 
     <script>
-        let now = new Date();
-        let curM = now.getMonth(); 
-        let curY = now.getFullYear();
-        let currentFileToProcess = null;
-        
-        let settings = JSON.parse(localStorage.getItem('monChrono_settings')) || { 
-            cycleType: 'civil', cycleDay: 15,
-            tarifs: { casseCroute: 8.87, repasNuit: 9.81, repasStandard: 16.36, prime: 40.00 }
+        const App = {
+            state: {
+                curM: new Date().getMonth(),
+                curY: new Date().getFullYear(),
+                activeUser: "",
+                tachyMode: "service",
+                db: { users: {} },
+                settings: { 
+                    cycleType: 'civil', cycleDay: 15,
+                    tarifs: { casseCroute: 8.87, repasNuit: 9.81, repasStandard: 16.36, prime: 40.00 }
+                },
+                currentFile: null
+            },
+
+            init() {
+                const savedDb = localStorage.getItem('monChrono_multiprofil');
+                if (savedDb) this.state.db = JSON.parse(savedDb);
+                const savedSets = localStorage.getItem('monChrono_settings');
+                if (savedSets) this.state.settings = JSON.parse(savedSets);
+                this.state.activeUser = localStorage.getItem('monChrono_activeUser') || "";
+                Dom.initTheme();
+                Dom.updateUI();
+            },
+
+            save() {
+                localStorage.setItem('monChrono_multiprofil', JSON.stringify(this.state.db));
+                localStorage.setItem('monChrono_settings', JSON.stringify(this.state.settings));
+                localStorage.setItem('monChrono_activeUser', this.state.activeUser);
+            },
+
+            switchUser(name) {
+                if (!name || name === "AUCUN PROFIL") return;
+                this.state.activeUser = name;
+                this.save();
+                Dom.updateUI();
+            },
+
+            changeMonth(delta) {
+                this.state.curM += delta;
+                if (this.state.curM > 11) { this.state.curM = 0; this.state.curY++; }
+                if (this.state.curM < 0) { this.state.curM = 11; this.state.curY--; }
+                Dom.updateUI();
+            },
+
+            setTachyMode(mode) {
+                this.state.tachyMode = mode;
+                Dom.updateUI();
+            },
+
+            toggleTheme() {
+                const isDark = document.getElementById('themeToggle').checked;
+                document.documentElement.classList.toggle('dark', isDark);
+                localStorage.setItem('monChrono_theme', isDark ? 'dark' : 'light');
+            },
+
+            toggleConge(dateStr) {
+                if (!this.state.activeUser) return;
+                let user = this.state.db.users[this.state.activeUser];
+                if (!user.conges) user.conges = [];
+                const idx = user.conges.indexOf(dateStr);
+                if (idx > -1) user.conges.splice(idx, 1);
+                else user.conges.push(dateStr);
+                this.save();
+                Dom.updateUI();
+            },
+
+            showHistoriqueConges() {
+                const user = this.getUserData();
+                const conges = user.conges || [];
+                if (conges.length === 0) return alert("Aucun congé enregistré.");
+
+                const sortedDates = conges.map(d => {
+                    const p = d.split('/');
+                    return new Date(p[2], p[1]-1, p[0]);
+                }).sort((a, b) => a - b);
+
+                let periods = [];
+                if (sortedDates.length > 0) {
+                    let start = sortedDates[0];
+                    let current = sortedDates[0];
+
+                    for (let i = 1; i <= sortedDates.length; i++) {
+                        let next = sortedDates[i];
+                        let diff = next ? (next - current) / (1000 * 60 * 60 * 24) : null;
+                        if (diff === null || diff > 2) { 
+                            if (start.getTime() === current.getTime()) {
+                                periods.push(Calcs.formatDate(start));
+                            } else {
+                                periods.push(`Du ${Calcs.formatDate(start)} au ${Calcs.formatDate(current)}`);
+                            }
+                            start = next;
+                        }
+                        current = next;
+                    }
+                }
+
+                document.getElementById('modalDate').innerText = "Historique Congés";
+                let h = '<div class="space-y-3">';
+                periods.reverse().forEach(p => {
+                    h += `<div class="p-4 bg-emerald-50 dark:bg-emerald-900/20 border-l-4 border-emerald-500 rounded-lg"><p class="text-xs font-black uppercase italic dark:text-white">${p}</p></div>`;
+                });
+                document.getElementById('modalBody').innerHTML = h + '</div>';
+                document.getElementById('dayModal').classList.remove('hidden');
+            },
+
+            handleFileSelect(input) {
+                this.state.currentFile = input.files[0];
+                if (!this.state.currentFile) return;
+                const userKeys = Object.keys(this.state.db.users);
+                const sectionExisting = document.getElementById('sectionExistingUser');
+                const sel = document.getElementById('importSelectUser');
+                if (userKeys.length > 0) {
+                    sectionExisting.classList.remove('hidden');
+                    sel.innerHTML = userKeys.map(u => `<option value="${u}">${u.toUpperCase()}</option>`).join('');
+                } else { sectionExisting.classList.add('hidden'); }
+                document.getElementById('importModal').classList.remove('hidden');
+            },
+
+            confirmImport(isNew) {
+                const name = isNew ? document.getElementById('importNewUserName').value.trim() : document.getElementById('importSelectUser').value;
+                if (!name) return alert("Nom requis");
+                this.processCSV(this.state.currentFile, name);
+                document.getElementById('importModal').classList.add('hidden');
+            },
+
+            processCSV(file, userName) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const rows = e.target.result.split('\n');
+                    let newActivities = [], datesFound = [], isCorrupted = true;
+                    rows.forEach(row => {
+                        const cols = row.replace(/"/g, '').split(';');
+                        if (cols.length < 5) return;
+                        const dtParts = cols[0].trim().split(' ');
+                        if (dtParts.length < 2) return;
+                        const dateEls = dtParts[0].split('/');
+                        const [j, m, a] = dateEls.map(Number);
+                        const [hh, mm] = dtParts[1].split(':').map(Number);
+                        const ts = new Date(a, m - 1, j, hh, mm).getTime();
+                        const duree = cols[4];
+                        if (cols[2].includes("Card") || !duree || !duree.includes(":")) return;
+                        isCorrupted = false;
+                        datesFound.push(new Date(a, m-1, j));
+                        newActivities.push({
+                            timestamp: ts, date: dtParts[0], heure: dtParts[1].substring(0,5),
+                            type: Calcs.getType(cols[2]), label: cols[2],
+                            dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
+                        });
+                    });
+                    if (!this.state.db.users[userName]) this.state.db.users[userName] = { activities: {}, conges: [], imports: [] };
+                    const user = this.state.db.users[userName];
+                    if (!isCorrupted) {
+                        let datesAffected = new Set();
+                        let currentP = null;
+                        newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
+                            if (act.type !== 'repos') {
+                                if (!currentP) { currentP = act.date; user.activities[currentP] = []; }
+                                user.activities[currentP].push(act);
+                                datesAffected.add(act.date);
+                            } else if (act.dureeMinutes > 420) {
+                                currentP = null;
+                            } else if (currentP) {
+                                user.activities[currentP].push(act);
+                                datesAffected.add(currentP);
+                            }
+                        });
+                        datesFound.sort((a,b) => a - b);
+                        user.imports.push({
+                            fileName: file.name, period: `${Calcs.formatDate(datesFound[0])} au ${Calcs.formatDate(datesFound[datesFound.length-1])}`,
+                            dates: Array.from(datesAffected), corrupted: false
+                        });
+                    }
+                    this.state.activeUser = userName;
+                    this.save();
+                    Dom.updateUI();
+                    Dom.navTo('dashboard');
+                };
+                reader.readAsText(file);
+            },
+
+            deleteArchive(userName, index) {
+                if (!confirm(`Supprimer cette archive ?`)) return;
+                const user = this.state.db.users[userName];
+                const archive = user.imports[index];
+                if (archive.dates) archive.dates.forEach(d => delete user.activities[d]);
+                user.imports.splice(index, 1);
+                if (user.imports.length === 0) delete this.state.db.users[userName];
+                this.save();
+                this.init();
+            },
+
+            saveSettings() {
+                const s = this.state.settings;
+                s.cycleType = document.getElementById('cycleType').value;
+                s.cycleDay = parseInt(document.getElementById('cycleDay').value) || 15;
+                s.tarifs.casseCroute = parseFloat(document.getElementById('valCasseCroute').value) || 0;
+                s.tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value) || 0;
+                s.tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value) || 0;
+                s.tarifs.prime = parseFloat(document.getElementById('valPrime').value) || 0;
+                this.save();
+                Dom.updateUI();
+                alert("Réglages enregistrés");
+            },
+
+            clearAllData() { if (confirm("Tout supprimer ?")) { localStorage.clear(); location.reload(); } },
+            
+            getUserData() { return this.state.db.users[this.state.activeUser] || { activities: {}, conges: [], imports: [] }; }
         };
 
-        let db = JSON.parse(localStorage.getItem('monChrono_multiprofil')) || { users: {} };
-        let activeUser = localStorage.getItem('monChrono_activeUser') || "";
-        
-        const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+        const Calcs = {
+            p2: (n) => String(n).padStart(2, '0'),
+            formatDate: (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`,
+            
+            isFerie(date) {
+                const f = ["01/01", "13/04", "01/05", "08/05", "21/05", "01/06", "14/07", "15/08", "01/11", "11/11", "25/12"];
+                return f.includes(`${this.p2(date.getDate())}/${this.p2(date.getMonth() + 1)}`);
+            },
 
-        function p2(n) { return String(n).padStart(2, '0'); }
+            getType: (label) => {
+                const l = label.toLowerCase();
+                if (l.includes('repos')) return 'repos';
+                if (l.includes('conduite')) return 'conduite';
+                return 'travail';
+            },
 
-        function toggleTheme() {
-            const isDark = document.getElementById('themeToggle').checked;
-            document.documentElement.classList.toggle('dark', isDark);
-            localStorage.setItem('monChrono_theme', isDark ? 'dark' : 'light');
-        }
-
-        function toggleCycleDay() {
-            const type = document.getElementById('cycleType').value;
-            document.getElementById('daySelectorGroup').classList.toggle('hidden', type === 'civil');
-        }
-
-        function getPayrollDates() {
-            let start, end;
-            const day = parseInt(settings.cycleDay);
-            if (settings.cycleType === 'civil') {
-                start = new Date(curY, curM, 1); end = new Date(curY, curM + 1, 0);
-            } else if (settings.cycleType === 'prev_curr') {
-                start = new Date(curY, curM - 1, day); end = new Date(curY, curM, day - 1);
-            } else if (settings.cycleType === 'curr_next') {
-                start = new Date(curY, curM, day); end = new Date(curY, curM + 1, day - 1);
-            }
-            return { start, end };
-        }
-
-        function estJourFerie(date) {
-            const joursFeries = ["01/01", "13/04", "01/05", "08/05", "21/05", "01/06", "14/07", "15/08", "01/11", "11/11", "25/12"];
-            return joursFeries.includes(`${p2(date.getDate())}/${p2(date.getMonth() + 1)}`);
-        }
-
-        function verifieCouverture(ts, duree, h1, m1, h2, m2) {
-            let debut = new Date(ts); let fin = new Date(ts + duree * 60000);
-            let p1 = new Date(ts); p1.setHours(h1, m1, 0);
-            let p2 = new Date(ts); p2.setHours(h2, m2, 0);
-            return (debut <= p1 && fin >= p2);
-        }
-
-        function calculerMinutesDansPlage(ts, duree, startH, endH) {
-            let mins = 0; let d = new Date(ts);
-            for (let i = 0; i < duree; i++) {
-                let h = d.getHours();
-                if (startH > endH) { if (h >= startH || h < endH) mins++; }
-                else { if (h >= startH && h < endH) mins++; }
-                d.setMinutes(d.getMinutes() + 1);
-            }
-            return mins;
-        }
-
-        function determinerFrais(poste) {
-            if (!poste) return { label: "", montant: 0 };
-            const hDebut = parseInt(poste[0].heure.split(':')[0]);
-            let couvreMidi = false, couvreSoir = false, nMinutes = 0;
-            let tags = []; let m = 0;
-            poste.forEach(a => {
-                if (a.type !== 'repos') {
-                    nMinutes += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 22, 7);
-                    if (verifieCouverture(a.timestamp, a.dureeMinutes, 11, 45, 14, 15)) couvreMidi = true;
-                    if (verifieCouverture(a.timestamp, a.dureeMinutes, 18, 45, 21, 15)) couvreSoir = true;
+            getMinsInRange(ts, duration, startH, endH) {
+                let m = 0;
+                let d = new Date(ts);
+                for (let i = 0; i < duration; i++) {
+                    let h = d.getHours();
+                    let isInRange = startH > endH ? (h >= startH || h < endH) : (h >= startH && h < endH);
+                    if (isInRange) m++;
+                    d.setMinutes(d.getMinutes() + 1);
                 }
-            });
-            if (couvreMidi) { tags.push("Midi"); m += settings.tarifs.repasStandard; }
-            if (couvreSoir) { tags.push("Soir"); m += settings.tarifs.repasStandard; }
-            const aDroitRepasUnique = (nMinutes >= 240);
-            if (aDroitRepasUnique) { tags.push("Repas Unique"); m += settings.tarifs.repasNuit; }
-            if (hDebut < 5 && !aDroitRepasUnique) { tags.push("Petit Déjeuner"); m += settings.tarifs.casseCroute; }
-            return { label: tags.join(' + '), montant: m };
-        }
+                return m;
+            },
 
-        function switchUser() {
-            activeUser = document.getElementById('userSelector').value;
-            localStorage.setItem('monChrono_activeUser', activeUser);
-            initApp();
-        }
+            checkOverlap(ts, duration, hS, mS, hE, mE) {
+                let start = ts;
+                let end = ts + duration * 60000;
+                let p1 = new Date(ts).setHours(hS, mS, 0);
+                let p2 = new Date(ts).setHours(hE, mE, 0);
+                return (start <= p1 && end >= p2);
+            },
 
-        function initApp() {
-            const savedTheme = localStorage.getItem('monChrono_theme') || 'light';
-            document.getElementById('themeToggle').checked = (savedTheme === 'dark');
-            document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+            getFrais(poste, tarifs) {
+                if (!poste || poste.length === 0) return { label: "", montant: 0 };
+                let tags = [], m = 0, nMinutes = 0, cMidi = false, cSoir = false;
+                poste.forEach(a => {
+                    if (a.type !== 'repos') {
+                        nMinutes += this.getMinsInRange(a.timestamp, a.dureeMinutes, 22, 7);
+                        if (this.checkOverlap(a.timestamp, a.dureeMinutes, 11, 45, 14, 15)) cMidi = true;
+                        if (this.checkOverlap(a.timestamp, a.dureeMinutes, 18, 45, 21, 15)) cSoir = true;
+                    }
+                });
+                if (cMidi) { tags.push("Midi"); m += tarifs.repasStandard; }
+                if (cSoir) { tags.push("Soir"); m += tarifs.repasStandard; }
+                if (nMinutes >= 240) { tags.push("Repas Unique"); m += tarifs.repasNuit; }
+                else if (parseInt(poste[0].heure.split(':')[0]) < 5) { tags.push("P.Déj"); m += tarifs.casseCroute; }
+                return { label: tags.join(' + '), montant: m };
+            }
+        };
 
-            const userKeys = Object.keys(db.users);
-            
-            const uSel = document.getElementById('userSelector');
-            uSel.innerHTML = userKeys.length > 0 ? "" : `<option value="">AUCUN PROFIL</option>`;
-            userKeys.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u; opt.innerText = u.toUpperCase();
-                if(u === activeUser) opt.selected = true;
-                uSel.appendChild(opt);
-            });
+        const Dom = {
+            moisNoms: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"],
 
-            if(!activeUser && userKeys.length > 0) { activeUser = userKeys[0]; localStorage.setItem('monChrono_activeUser', activeUser); uSel.value = activeUser; }
+            initTheme() {
+                const theme = localStorage.getItem('monChrono_theme') || 'light';
+                document.getElementById('themeToggle').checked = (theme === 'dark');
+            },
 
-            document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
-            document.getElementById('cycleType').value = settings.cycleType;
-            document.getElementById('cycleDay').value = settings.cycleDay;
-            document.getElementById('valCasseCroute').value = settings.tarifs.casseCroute;
-            document.getElementById('valRepasNuit').value = settings.tarifs.repasNuit;
-            document.getElementById('valRepasStandard').value = settings.tarifs.repasStandard;
-            document.getElementById('valPrime').value = settings.tarifs.prime;
-            toggleCycleDay();
+            updateUI() {
+                const s = App.state;
+                const user = App.getUserData();
+                document.getElementById('currentMonthDisplay').innerText = `${this.moisNoms[s.curM]} ${s.curY}`;
+                const uSel = document.getElementById('userSelector');
+                uSel.innerHTML = Object.keys(s.db.users).map(u => `<option value="${u}" ${u===s.activeUser?'selected':''}>${u.toUpperCase()}</option>`).join('') || '<option>AUCUN PROFIL</option>';
+                
+                document.getElementById('modeService').className = `px-3 py-1 text-[8px] font-black uppercase rounded-md ${s.tachyMode==='service'?'tab-active':'text-neutral-500'}`;
+                document.getElementById('modeCivil').className = `px-3 py-1 text-[8px] font-black uppercase rounded-md ${s.tachyMode==='civil'?'tab-active':'text-neutral-500'}`;
 
-            const userData = activeUser ? (db.users[activeUser] || { activities: {}, conges: [], imports: [] }) : { activities: {}, conges: [], imports: [] };
-            const data = userData.activities || {};
-            const listeConges = userData.conges || [];
+                this.renderGrid(user, s.curM, s.curY);
+                this.renderTachy(user, s.curM, s.curY);
+                this.renderFraisAndDash(user, s.curM, s.curY);
+                this.updateSettingsFields();
+                this.renderArchives();
+            },
 
-            const grid = document.getElementById('grid');
-            const tBody = document.getElementById('bodyTachy');
-            const actList = document.getElementById('activitiesList');
-            const fList = document.getElementById('fraisList');
-            const pList = document.getElementById('primesList');
-            
-            grid.innerHTML = ""; tBody.innerHTML = ""; actList.innerHTML = ""; fList.innerHTML = ""; pList.innerHTML = "";
-            document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
-            
-            let firstDay = new Date(curY, curM, 1).getDay();
-            let shift = (firstDay === 0) ? 6 : firstDay - 1;
-            for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
+            renderGrid(user, m, y) {
+                const grid = document.getElementById('grid');
+                grid.innerHTML = "";
+                document.getElementById('gridHeaders').innerHTML = ['L','M','M','J','V','S','D'].map(h => `<div class="day-header">${h}</div>`).join('');
+                let firstDay = new Date(y, m, 1).getDay();
+                let shift = (firstDay === 0) ? 6 : firstDay - 1;
+                for(let i=0; i<shift; i++) grid.innerHTML += `<div class="day-box empty"></div>`;
+                const daysInM = new Date(y, m + 1, 0).getDate();
+                for(let d=1; d<=daysInM; d++) {
+                    const df = `${Calcs.p2(d)}/${Calcs.p2(m+1)}/${y}`;
+                    const poste = user.activities[df];
+                    const isC = (user.conges || []).includes(df);
+                    const isF = Calcs.isFerie(new Date(y, m, d));
+                    const box = document.createElement('div');
+                    box.className = `day-box ${poste ? 'worked' : 'rest day-box-border'} ${isC ? 'conge' : ''}`;
+                    box.innerHTML = (isF ? `<div class="badge-ferie">férié</div>` : "") + d;
+                    box.onclick = () => {
+                        if (poste) {
+                            let sj=0, nj=0; 
+                            poste.forEach(a => { if(a.type!=='repos'){ sj+=a.dureeMinutes; nj+=Calcs.getMinsInRange(a.timestamp, a.dureeMinutes, 21, 6); }});
+                            this.showDayDetail(d, sj, nj, poste, isF);
+                        } else if (isF) {
+                            this.showDayDetail(d, 0, 0, null, true);
+                        } else {
+                            App.toggleConge(df);
+                        }
+                    };
+                    grid.appendChild(box);
+                }
+            },
 
-            let sMonth = 0, nMonth = 0, fMonth = 0, countTravailMensuel = 0; 
-            const daysInMonth = new Date(curY, curM + 1, 0).getDate();
-            const civilStart = new Date(curY, curM, 1);
-            const civilEnd = new Date(curY, curM + 1, 0);
-
-            for(let d=1; d<=daysInMonth; d++) {
-                const dF = `${p2(d)}/${p2(curM + 1)}/${curY}`;
-                const poste = data[dF];
-                const isC = listeConges.includes(dF);
-                if(poste) {
-                    countTravailMensuel++; 
-                    let sJ = 0, nJ = 0;
-                    poste.forEach(a => { if(a.type !== 'repos'){ sJ += a.dureeMinutes; nJ += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 21, 6); } });
-                    sMonth += sJ; nMonth += nJ;
-                    const cF = determinerFrais(poste);
-                    fMonth += cF.montant;
-                    grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${p2(sJ%60)}','${Math.floor(nJ/60)}h${p2(nJ%60)}')">${d}</div>`;
-                    tBody.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5"><td class="p-3 opacity-50">${p2(d)}/${p2(curM+1)}</td><td class="p-3 font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td><td class="p-3 text-blue-500 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td><td class="p-3 text-emerald-600 font-black">${cF.montant.toFixed(2)}€</td></tr>`;
-                    const row = document.createElement('div'); row.className = "space-y-2 cursor-pointer";
-                    row.innerHTML = `<div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-neutral-500">${dF}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} → ${Math.floor(sJ/60)}h${p2(sJ%60)}</p></div><div class="w-full h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden flex border border-black/5 dark:border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${(s.dureeMinutes/660)*100}%"></div>`).join('')}</div>`;
-                    row.onclick = () => showTimelineFromData(d, poste); actList.appendChild(row);
+            renderTachy(user, m, y) {
+                const body = document.getElementById('bodyTachy');
+                body.innerHTML = "";
+                let totS=0, totN=0, totF=0;
+                const daysInM = new Date(y, m+1, 0).getDate();
+                
+                if (App.state.tachyMode === 'service') {
+                    for(let d=1; d<=daysInM; d++) {
+                        const df = `${Calcs.p2(d)}/${Calcs.p2(m+1)}/${y}`;
+                        const p = user.activities[df];
+                        if (p) {
+                            let sj=0, nj=0;
+                            p.forEach(a => { if(a.type!=='repos'){ sj+=a.dureeMinutes; nj+=Calcs.getMinsInRange(a.timestamp, a.dureeMinutes, 21, 6); }});
+                            const f = Calcs.getFrais(p, App.state.settings.tarifs);
+                            totS+=sj; totN+=nj; totF+=f.montant;
+                            body.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5"><td class="p-3 opacity-50">${Calcs.p2(d)}/${Calcs.p2(m+1)}</td><td class="p-3 font-black">${Math.floor(sj/60)}h${Calcs.p2(sj%60)}</td><td class="p-3 text-blue-500 font-black">${Math.floor(nj/60)}h${Calcs.p2(nj%60)}</td><td class="p-3 text-emerald-600 font-black">${f.montant.toFixed(2)}€</td></tr>`;
+                        }
+                    }
                 } else {
-                    grid.innerHTML += `<div class="day-box rest day-box-border ${isC ? 'conge' : ''}" onclick="toggleConge('${dF}')">${d}</div>`;
-                }
-            }
+                    for(let d=1; d<=daysInM; d++) {
+                        let sjCivil=0, njCivil=0;
+                        const startCivil = new Date(y, m, d, 0, 0, 0).getTime();
+                        const endCivil = new Date(y, m, d, 23, 59, 59).getTime();
 
-            document.getElementById('titleAnneeTravail').innerText = "En " + curY;
-            let debutSocial, finSocial;
-            if (curM >= 5) { debutSocial = new Date(curY, 5, 1); finSocial = new Date(curY + 1, 4, 31); } 
-            else { debutSocial = new Date(curY - 1, 5, 1); finSocial = new Date(curY, 4, 31); }
-            document.getElementById('titleAnneeConge').innerText = `Depuis le 01/06/${debutSocial.getFullYear()}`;
+                        Object.values(user.activities).forEach(poste => {
+                            poste.forEach(act => {
+                                if (act.type !== 'repos') {
+                                    const interStart = Math.max(act.timestamp, startCivil);
+                                    const interEnd = Math.min(act.timestamp + (act.dureeMinutes * 60000), endCivil);
+                                    if (interEnd > interStart) {
+                                        const mins = (interEnd - interStart) / 60000;
+                                        sjCivil += mins;
+                                        njCivil += Calcs.getMinsInRange(interStart, mins, 21, 6);
+                                    }
+                                }
+                            });
+                        });
 
-            let joursTravaillesAnnuels = Object.keys(data).filter(date => date.endsWith('/' + curY)).length;
-            let joursCongesPériode = listeConges.filter(str => { let p = str.split('/'); let dateC = new Date(p[2], p[1]-1, p[0]); return dateC >= debutSocial && dateC <= finSocial; }).length;
-
-            document.getElementById('countTravailAnnuel').innerText = joursTravaillesAnnuels;
-            document.getElementById('countTravailMensuel').innerText = countTravailMensuel;
-            document.getElementById('countCongeAnnuel').innerText = joursCongesPériode;
-
-            const pDates = getPayrollDates();
-            document.getElementById('payrollPeriod').innerText = `Cycle Frais : ${p2(pDates.start.getDate())}/${p2(pDates.start.getMonth()+1)} au ${p2(pDates.end.getDate())}/${p2(pDates.end.getMonth()+1)}`;
-            let sumF = 0, sumP = 0;
-
-            Object.keys(data).forEach(k => {
-                const parts = k.split('/'); const dt = new Date(parts[2], parts[1]-1, parts[0]);
-                if(dt >= pDates.start && dt <= pDates.end) {
-                    const cF = determinerFrais(data[k]);
-                    if(cF.montant > 0) {
-                        sumF += cF.montant;
-                        fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-600"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${cF.label}</p></div><p class="text-xl font-black">${cF.montant.toFixed(2)}€</p></div>`;
+                        if (sjCivil > 0) {
+                            totS += Math.round(sjCivil); totN += Math.round(njCivil);
+                            body.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5"><td class="p-3 opacity-50 font-bold">${Calcs.p2(d)}/${Calcs.p2(m+1)}</td><td class="p-3 font-black">${Math.floor(sjCivil/60)}h${Calcs.p2(Math.round(sjCivil%60))}</td><td class="p-3 text-blue-500 font-black">${Math.floor(njCivil/60)}h${Calcs.p2(Math.round(njCivil%60))}</td><td class="p-3 text-neutral-400 font-bold italic">-</td></tr>`;
+                        }
                     }
                 }
-                if(dt >= civilStart && dt <= civilEnd) {
-                    let labelPrime = "";
-                    if(estJourFerie(dt)) labelPrime = "Départ Jour Férié";
-                    else if(dt.getDay() === 0) labelPrime = "Départ Dimanche";
-                    if(labelPrime !== "") {
-                        sumP += settings.tarifs.prime;
-                        pList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${labelPrime}</p></div><p class="text-xl font-black text-orange-500">${settings.tarifs.prime.toFixed(2)}€</p></div>`;
+                
+                document.getElementById('totalService').innerText = `${Math.floor(totS/60)}h${Calcs.p2(totS%60)}`;
+                document.getElementById('totalNuit').innerText = `${Math.floor(totN/60)}h${Calcs.p2(totN%60)}`;
+                document.getElementById('totalFraisTachy').innerText = App.state.tachyMode === 'service' ? totF.toFixed(2) + "€" : "-";
+            },
+
+            renderFraisAndDash(user, m, y) {
+                const fList = document.getElementById('fraisList');
+                const pList = document.getElementById('primesList');
+                const actList = document.getElementById('activitiesList');
+                fList.innerHTML = ""; pList.innerHTML = ""; actList.innerHTML = "";
+                const sets = App.state.settings;
+                let pS, pE;
+                if (sets.cycleType === 'civil') { pS = new Date(y, m, 1); pE = new Date(y, m+1, 0); }
+                else if (sets.cycleType === 'prev_curr') { pS = new Date(y, m-1, sets.cycleDay); pE = new Date(y, m, sets.cycleDay-1); }
+                else { pS = new Date(y, m, sets.cycleDay); pE = new Date(y, m+1, sets.cycleDay-1); }
+                document.getElementById('payrollPeriod').innerText = `Cycle : ${Calcs.p2(pS.getDate())}/${Calcs.p2(pS.getMonth()+1)} au ${Calcs.p2(pE.getDate())}/${Calcs.p2(pE.getMonth()+1)}`;
+                let sumF = 0, sumP = 0, countM = 0;
+                Object.keys(user.activities).forEach(k => {
+                    const parts = k.split('/'); const dt = new Date(parts[2], parts[1]-1, parts[0]);
+                    const poste = user.activities[k];
+                    if (dt >= pS && dt <= pE) {
+                        const f = Calcs.getFrais(poste, sets.tarifs);
+                        if (f.montant > 0) {
+                            sumF += f.montant;
+                            fList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-emerald-600"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${f.label}</p></div><p class="text-xl font-black">${f.montant.toFixed(2)}€</p></div>`;
+                        }
                     }
-                }
-            });
-
-            document.getElementById('totalPayroll').innerText = (sumF + sumP).toFixed(2) + "€";
-            document.getElementById('detailPayroll').innerText = `Frais: ${sumF.toFixed(2)}€ | Primes: ${sumP.toFixed(2)}€`;
-            document.getElementById('totalService').innerText = Math.floor(sMonth/60) + "h" + p2(sMonth%60);
-            document.getElementById('totalNuit').innerText = Math.floor(nMonth/60) + "h" + p2(nMonth%60);
-            document.getElementById('totalFraisTachy').innerText = fMonth.toFixed(2) + "€";
-            
-            refreshArchiveList();
-        }
-
-        function refreshArchiveList() {
-            const container = document.getElementById('archiveAccordionContainer');
-            container.innerHTML = "";
-            const userKeys = Object.keys(db.users);
-
-            if(userKeys.length === 0) {
-                container.innerHTML = `<p class="text-[9px] font-bold text-neutral-400 uppercase italic text-center py-4">Aucun profil enregistré</p>`;
-                return;
-            }
-
-            userKeys.forEach(u => {
-                const userData = db.users[u];
-                const fileCount = (userData.imports || []).length;
+                    if (dt.getMonth() === m && dt.getFullYear() === y) {
+                        countM++;
+                        let labelPrime = "";
+                        if (Calcs.isFerie(dt)) labelPrime = "Départ Férié";
+                        else if (dt.getDay() === 0) labelPrime = "Départ Dimanche";
+                        if (labelPrime) {
+                            sumP += sets.tarifs.prime;
+                            pList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${labelPrime}</p></div><p class="text-xl font-black text-orange-500">${sets.tarifs.prime.toFixed(2)}€</p></div>`;
+                        }
+                        const lastA = poste[poste.length-1];
+                        const endTs = lastA.timestamp + (lastA.dureeMinutes * 60000);
+                        const endH = Calcs.p2(new Date(endTs).getHours()) + ':' + Calcs.p2(new Date(endTs).getMinutes());
+                        actList.innerHTML += `<div class="space-y-2" onclick="Dom.showTimeline('${k}', ${JSON.stringify(poste).replace(/"/g, '&quot;')})"><div class="flex justify-between items-center"><p class="text-[10px] font-black uppercase text-neutral-500">${k}</p><p class="text-[10px] font-black text-orange-500 uppercase">${poste[0].heure} - ${endH}</p></div><div class="w-full h-8 bg-neutral-100 dark:bg-neutral-900 rounded-lg overflow-hidden flex border border-black/5 dark:border-white/5">${poste.map(s => `<div class="color-${s.type}" style="width:${Math.round((s.dureeMinutes/720)*100)}%"></div>`).join('')}</div></div>`;
+                    }
+                });
                 
-                const accordion = document.createElement('div');
-                accordion.className = "space-y-2";
+                const debutS = m >= 5 ? new Date(y, 5, 1) : new Date(y-1, 5, 1);
+                const finS = m >= 5 ? new Date(y+1, 4, 31) : new Date(y, 4, 31);
                 
-                accordion.innerHTML = `
-                    <div onclick="toggleAccordion('${u}')" class="flex justify-between items-center p-4 bg-neutral-100 dark:bg-neutral-900 rounded-xl cursor-pointer">
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-black uppercase dark:text-white">${u}</span>
-                            <span class="text-[8px] font-bold text-orange-500 uppercase">${fileCount} fichier(s)</span>
-                        </div>
-                        <span id="chevron-${u}" class="accordion-chevron text-orange-500">▼</span>
-                    </div>
-                    <div id="content-${u}" class="accordion-content space-y-2 px-2">
-                        ${(userData.imports || []).map((imp, idx) => `
-                            <div class="glass-card p-3 flex justify-between items-center bg-white dark:bg-neutral-800/50 border border-black/5 dark:border-white/5">
-                                <div class="flex-1 min-w-0 pr-2">
-                                    <p class="text-[10px] font-bold dark:text-white truncate ${imp.corrupted ? 'text-red-500' : ''}">${imp.fileName}</p>
-                                    <p class="text-[7px] font-bold text-neutral-500 uppercase">
-                                        ${imp.corrupted ? 'FICHIER NON RECONNU / CORROMPU' : 'Période: ' + imp.period}
-                                    </p>
-                                </div>
-                                <button onclick="deleteImportFromArchive('${u}', ${idx})" class="p-2 text-red-500">🗑️</button>
-                            </div>
-                        `).join('')}
-                        ${fileCount === 0 ? '<p class="text-[8px] text-center text-neutral-500 italic py-2">Aucun fichier</p>' : ''}
-                    </div>
-                `;
-                container.appendChild(accordion);
-            });
-        }
+                document.getElementById('titleAnneeTravail').innerText = "En " + y;
+                document.getElementById('titleAnneeConge').innerText = "Période " + debutS.getFullYear() + "/" + finS.getFullYear();
+                
+                const joursTravaillesAnnee = Object.keys(user.activities).filter(k => {
+                    const p = k.split('/');
+                    return parseInt(p[2]) === y;
+                }).length;
 
-        function toggleAccordion(userId) {
-            const content = document.getElementById(`content-${userId}`);
-            const chevron = document.getElementById(`chevron-${userId}`);
-            const isOpen = content.classList.contains('open');
-            
-            document.querySelectorAll('.accordion-content').forEach(el => el.classList.remove('open'));
-            document.querySelectorAll('.accordion-chevron').forEach(el => el.classList.remove('open'));
-            
-            if (!isOpen) {
-                content.classList.add('open');
-                chevron.classList.add('open');
-            }
-        }
-
-        function handleFileSelect(input) {
-            currentFileToProcess = input.files[0]; 
-            if (!currentFileToProcess) return;
-            const impSel = document.getElementById('importSelectUser');
-            const userKeys = Object.keys(db.users);
-            const sectionExisting = document.getElementById('sectionExistingUser');
-            if (userKeys.length > 0) {
-                sectionExisting.classList.remove('hidden');
-                impSel.innerHTML = userKeys.map(u => `<option value="${u}">${u.toUpperCase()}</option>`).join('');
-            } else {
-                sectionExisting.classList.add('hidden');
-            }
-            document.getElementById('importModal').classList.remove('hidden');
-        }
-
-        function confirmImportWithUser() {
-            const name = document.getElementById('importSelectUser').value;
-            processCSV(currentFileToProcess, name);
-            document.getElementById('importModal').classList.add('hidden');
-        }
-
-        function confirmImportWithNewUser() {
-            const name = document.getElementById('importNewUserName').value.trim();
-            if(!name) { alert("Veuillez saisir un nom pour le nouveau profil"); return; }
-            processCSV(currentFileToProcess, name);
-            document.getElementById('importModal').classList.add('hidden');
-            document.getElementById('importNewUserName').value = "";
-        }
-
-        function processCSV(file, userName) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result; const rows = text.split('\n');
-                let newActivities = [];
-                let datesFound = [];
-                let isCorrupted = true;
-
-                rows.forEach(row => {
-                    const cols = row.replace(/"/g, '').split(';'); if (cols.length < 5) return;
-                    const dtParts = cols[0].trim().split(' '); if(dtParts.length < 2) return;
-                    const dateElements = dtParts[0].split('/');
-                    if(dateElements.length !== 3) return;
-                    
-                    const [j, m, a] = dateElements.map(Number);
-                    const [hh, mm] = dtParts[1].split(':').map(Number);
-                    const ts = new Date(a, m - 1, j, hh, mm).getTime();
-                    const duree = cols[4]; 
-                    if (cols[2].includes("Card") || !duree || !duree.includes(":")) return;
-                    
-                    isCorrupted = false;
-                    datesFound.push(new Date(a, m - 1, j));
-                    newActivities.push({
-                        timestamp: ts, date: dtParts[0], heure: dtParts[1].substring(0,5),
-                        type: cols[2].toLowerCase().includes('repos') ? 'repos' : (cols[2].toLowerCase().includes('conduite') ? 'conduite' : 'travail'),
-                        label: cols[2], dureeMinutes: (parseInt(duree.split(':')[0]) * 60) + parseInt(duree.split(':')[1])
-                    });
+                const congesPeriode = (user.conges || []).filter(k => { 
+                    const p = k.split('/'); const d = new Date(p[2], p[1]-1, p[0]); 
+                    return d >= debutS && d <= finS; 
                 });
 
-                if(!db.users[userName]) db.users[userName] = { activities: {}, conges: [], imports: [] };
-                if(!db.users[userName].imports) db.users[userName].imports = [];
+                const samedisCount = congesPeriode.filter(k => {
+                    const p = k.split('/'); const d = new Date(p[2], p[1]-1, p[0]); 
+                    return d.getDay() === 6;
+                }).length;
 
-                if (!isCorrupted) {
-                    let datesAffected = new Set();
-                    const userPostes = db.users[userName].activities;
-                    let currentP = null;
-                    newActivities.sort((a,b) => a.timestamp - b.timestamp).forEach(act => {
-                        if (act.type !== 'repos') {
-                            if (!currentP) { currentP = act.date; userPostes[currentP] = []; }
-                            userPostes[currentP].push(act);
-                            datesAffected.add(act.date);
-                        } else if (act.dureeMinutes > 420) { currentP = null; }
-                        else if (currentP) { userPostes[currentP].push(act); datesAffected.add(currentP); }
-                    });
-                    
-                    datesFound.sort((a,b) => a - b);
-                    const startD = datesFound[0];
-                    const endD = datesFound[datesFound.length - 1];
-                    
-                    db.users[userName].imports.push({
-                        fileName: file.name,
-                        profil: userName,
-                        importDate: new Date().toLocaleDateString('fr-FR'),
-                        period: `${p2(startD.getDate())}/${p2(startD.getMonth()+1)} au ${p2(endD.getDate())}/${p2(endD.getMonth()+1)}`,
-                        dates: Array.from(datesAffected),
-                        corrupted: false
-                    });
-                    alert("Importation réussie !");
-                } else {
-                    db.users[userName].imports.push({
-                        fileName: file.name,
-                        profil: userName,
-                        importDate: new Date().toLocaleDateString('fr-FR'),
-                        dates: [],
-                        corrupted: true
-                    });
-                    alert("Attention : Le fichier n'a pas pu être lu. Il est ajouté en tant que fichier corrompu pour que vous puissiez le supprimer dans les paramètres.");
+                document.getElementById('totalPayroll').innerText = (sumF + sumP).toFixed(2) + "€";
+                document.getElementById('detailPayroll').innerText = `Frais: ${sumF.toFixed(2)}€ | Primes: ${sumP.toFixed(2)}€`;
+                document.getElementById('countTravailMensuel').innerText = countM;
+                document.getElementById('countTravailAnnuel').innerText = joursTravaillesAnnee;
+                document.getElementById('countCongeAnnuel').innerText = congesPeriode.length;
+                document.getElementById('countSamedisAnnuel').innerText = samedisCount + " / 5 samedis";
+            },
+
+            showDayDetail(d, s, n, poste, isF) {
+                document.getElementById('modalDate').innerText = `${Calcs.p2(d)} ${this.moisNoms[App.state.curM]}`;
+                let bodyHtml = isF ? `<div class="mb-4 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 text-[10px] font-black uppercase text-center rounded-lg italic">Jour Férié</div>` : "";
+                if (poste) {
+                    bodyHtml += `<div class="space-y-4"><div><p class="text-[10px] font-black text-neutral-500 uppercase italic">Temps de Service</p><p class="dark:text-white font-black text-xl italic uppercase">${Math.floor(s/60)}h${Calcs.p2(s%60)}</p></div><div><p class="text-[10px] font-black text-blue-500 uppercase italic">Temps de Nuit</p><p class="text-blue-500 font-black text-xl italic uppercase">${Math.floor(n/60)}h${Calcs.p2(n%60)}</p></div></div>`;
+                } else if (isF) {
+                    bodyHtml += `<p class="text-xs font-bold text-neutral-500 italic text-center">Aucune activité enregistrée ce jour férié.</p>`;
                 }
+                document.getElementById('modalBody').innerHTML = bodyHtml;
+                document.getElementById('dayModal').classList.remove('hidden');
+            },
 
-                activeUser = userName;
-                localStorage.setItem('monChrono_multiprofil', JSON.stringify(db));
-                localStorage.setItem('monChrono_activeUser', activeUser);
-                initApp(); navTo('dashboard');
-            };
-            reader.readAsText(file);
-        }
+            showTimeline(date, segments) {
+                document.getElementById('modalDate').innerText = "Détail : " + date;
+                let h = '<div class="space-y-3">';
+                
+                segments.forEach(x => {
+                    const c = x.type==='conduite'?'#10b981':(x.type==='travail'?'#f59e0b':'#ef4444');
+                    h += `<div class="timeline-item"><div class="timeline-dot" style="background:${c}"></div><p class="text-[10px] uppercase font-black" style="color:${c}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white">${Math.floor(x.dureeMinutes/60)}h${Calcs.p2(x.dureeMinutes%60)}</p></div>`;
+                });
 
-        function deleteImportFromArchive(userName, index) {
-            if (!confirm(`Voulez-vous supprimer ce fichier pour le profil ${userName.toUpperCase()} ?`)) return;
-            const userData = db.users[userName];
-            if (!userData || !userData.imports[index]) return;
-            
-            const importRecord = userData.imports[index];
-            if (importRecord.dates) {
-                importRecord.dates.forEach(dateStr => { delete userData.activities[dateStr]; });
-            }
-            userData.imports.splice(index, 1);
-            
-            if (userData.imports.length === 0) {
-                if(confirm(`Le profil ${userName.toUpperCase()} n'a plus de fichiers. Supprimer définitivement le profil ?`)) {
-                    delete db.users[userName];
-                    const remainingUsers = Object.keys(db.users);
-                    activeUser = remainingUsers.length > 0 ? remainingUsers[0] : "";
-                    localStorage.setItem('monChrono_activeUser', activeUser);
-                }
-            }
-            
-            localStorage.setItem('monChrono_multiprofil', JSON.stringify(db));
-            initApp();
-        }
+                // Calcul et ajout de la ligne de fin de service
+                const lastA = segments[segments.length - 1];
+                const endTs = lastA.timestamp + (lastA.dureeMinutes * 60000);
+                const endH = Calcs.p2(new Date(endTs).getHours()) + ':' + Calcs.p2(new Date(endTs).getMinutes());
 
-        function toggleConge(d) { 
-            if(!activeUser) return;
-            let list = db.users[activeUser].conges || [];
-            if (list.includes(d)) { list = list.filter(x => x !== d); } 
-            else { list.push(d); } 
-            db.users[activeUser].conges = list;
-            localStorage.setItem('monChrono_multiprofil', JSON.stringify(db)); 
-            initApp(); 
-        }
+                h += `<div class="timeline-item !pb-0"><div class="timeline-dot" style="background:#737373"></div><p class="text-[10px] uppercase font-black text-neutral-500 italic">Fin de service</p><p class="text-sm font-black dark:text-white">${endH}</p></div>`;
 
-        function showHistoriqueConges() {
-            if(!activeUser) return;
-            let debutSocial, finSocial;
-            if (curM >= 5) { debutSocial = new Date(curY, 5, 1); finSocial = new Date(curY + 1, 4, 31); } 
-            else { debutSocial = new Date(curY - 1, 5, 1); finSocial = new Date(curY, 4, 31); }
-            let datesObj = (db.users[activeUser].conges || []).map(str => {
-                let p = str.split('/'); return { str: str, date: new Date(p[2], p[1]-1, p[0]) };
-            }).filter(obj => obj.date >= debutSocial && obj.date <= finSocial).sort((a, b) => a.date - b.date);
-            if (datesObj.length === 0) { alert("Aucun congé sur cette période."); return; }
-            let groupes = [], currentGroup = [datesObj[0]];
-            for (let i = 1; i < datesObj.length; i++) {
-                let prev = datesObj[i-1].date, next = datesObj[i].date, temp = new Date(prev);
-                temp.setDate(temp.getDate() + 1);
-                let cont = true;
-                while (temp < next) { if (temp.getDay() !== 0 && !estJourFerie(temp)) { cont = false; break; } temp.setDate(temp.getDate() + 1); }
-                if (cont) currentGroup.push(datesObj[i]); else { groupes.push(currentGroup); currentGroup = [datesObj[i]]; }
-            }
-            groupes.push(currentGroup);
-            let html = `<div class="space-y-3">`;
-            groupes.forEach(g => {
-                html += `<div class="glass-card p-4 border-l-4 border-emerald-500">
-                    <p class="text-[9px] font-black text-neutral-500 uppercase italic">${g.length} j. posés</p>
-                    <p class="text-sm font-black dark:text-white">${g.length > 1 ? 'Du '+g[0].str.split('/20')[0]+' au '+g[g.length-1].str.split('/20')[0] : 'Le '+g[0].str}</p>
-                </div>`;
-            });
-            document.getElementById('modalDate').innerText = "Congés " + debutSocial.getFullYear() + "/" + finSocial.getFullYear();
-            document.getElementById('modalBody').innerHTML = html + "</div>";
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
+                document.getElementById('modalBody').innerHTML = h + '</div>';
+                document.getElementById('dayModal').classList.remove('hidden');
+            },
 
-        function saveSettings() {
-            settings.cycleType = document.getElementById('cycleType').value;
-            settings.cycleDay = parseInt(document.getElementById('cycleDay').value) || 15;
-            settings.tarifs.casseCroute = parseFloat(document.getElementById('valCasseCroute').value) || 0;
-            settings.tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value) || 0;
-            settings.tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value) || 0;
-            settings.tarifs.prime = parseFloat(document.getElementById('valPrime').value) || 0;
-            localStorage.setItem('monChrono_settings', JSON.stringify(settings));
-            initApp(); alert("Réglages enregistrés !");
-        }
+            renderArchives() {
+                const container = document.getElementById('archiveAccordionContainer');
+                container.innerHTML = "";
+                Object.keys(App.state.db.users).forEach(u => {
+                    const user = App.state.db.users[u];
+                    const div = document.createElement('div');
+                    div.className = "space-y-2";
+                    div.innerHTML = `<div onclick="Dom.toggleAccordion('${u}')" class="flex justify-between items-center p-4 bg-neutral-100 dark:bg-neutral-900 rounded-xl cursor-pointer"><div class="flex flex-col"><span class="text-[10px] font-black uppercase dark:text-white">${u}</span><span class="text-[8px] font-bold text-orange-500 uppercase">${(user.imports||[]).length} fichier(s)</span></div><span id="chevron-${u}" class="accordion-chevron text-orange-500">▼</span></div><div id="content-${u}" class="accordion-content space-y-2 px-2">${(user.imports||[]).map((imp, i) => `<div class="glass-card p-3 flex justify-between items-center bg-white dark:bg-neutral-800/50"><div><p class="text-[10px] font-bold dark:text-white truncate max-w-[140px]">${imp.fileName}</p><p class="text-[7px] font-bold text-neutral-500 uppercase">${imp.period}</p></div><button onclick="App.deleteArchive('${u}', ${i})" class="text-red-500">🗑️</button></div>`).join('')}</div>`;
+                    container.appendChild(div);
+                });
+            },
 
-        function toggleSidebar(f) { const s = document.getElementById('sidebar'); const o = document.getElementById('overlay'); if(f === false) { s.classList.remove('open'); o.style.display = 'none'; return; } s.classList.toggle('open'); o.style.display = s.classList.contains('open') ? 'block' : 'none'; }
-        function navTo(id) { document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden')); document.getElementById('view-' + id).classList.remove('hidden'); toggleSidebar(false); }
-        function setTab(t) { document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal'); document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy'); document.getElementById('btnCal').classList.toggle('tab-active', t==='cal'); document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy'); }
-        function changeMonth(d) { curM += d; if(curM>11){curM=0;curY++} if(curM<0){curM=11;curY--} initApp(); }
-        function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
-        function clearAllData() { if(confirm("Attention : Cela va supprimer TOUS les profils et tous les fichiers. Continuer ?")) { localStorage.clear(); location.reload(); } }
-        function showHeures(d, s, n) { 
-            document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM]; 
-            document.getElementById('modalBody').innerHTML = `<div class="space-y-4"><div><p class="text-[10px] font-black text-neutral-500 uppercase italic">Temps de service</p><p class="dark:text-white font-black text-xl italic uppercase">${s}</p></div><div><p class="text-[10px] font-black text-blue-500 uppercase italic">Temps de Nuit</p><p class="text-blue-500 font-black text-xl italic uppercase">${n}</p></div></div>`; 
-            document.getElementById('dayModal').classList.remove('hidden'); 
-        }
-        function showTimelineFromData(d, segments) {
-            document.getElementById('modalDate').innerText = "Détail du " + p2(d) + " " + moisNoms[curM];
-            let html = '<div class="space-y-3">';
-            segments.forEach(x => { 
-                const color = x.type === 'conduite' ? '#10b981' : (x.type === 'travail' ? '#f59e0b' : '#ef4444');
-                html += `<div class="timeline-item"><div class="timeline-dot" style="background:${color}"></div><p class="text-[10px] uppercase font-black" style="color:${color}">${x.label} (${x.heure})</p><p class="text-sm font-black dark:text-white">${Math.floor(x.dureeMinutes/60)}h${p2(x.dureeMinutes%60)}</p></div>`; 
-            });
-            document.getElementById('modalBody').innerHTML = html + '</div>';
-            document.getElementById('dayModal').classList.remove('hidden');
-        }
+            updateSettingsFields() {
+                const s = App.state.settings;
+                document.getElementById('cycleType').value = s.cycleType;
+                document.getElementById('cycleDay').value = s.cycleDay;
+                document.getElementById('valCasseCroute').value = s.tarifs.casseCroute;
+                document.getElementById('valRepasNuit').value = s.tarifs.repasNuit;
+                document.getElementById('valRepasStandard').value = s.tarifs.repasStandard;
+                document.getElementById('valPrime').value = s.tarifs.prime;
+                this.toggleCycleDayVisibility();
+            },
+
+            toggleAccordion(id) {
+                const c = document.getElementById('content-'+id);
+                const ch = document.getElementById('chevron-'+id);
+                const isO = c.classList.contains('open');
+                document.querySelectorAll('.accordion-content').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.accordion-chevron').forEach(el => el.classList.remove('open'));
+                if (!isO) { c.classList.add('open'); ch.classList.add('open'); }
+            },
+
+            toggleSidebar(force) {
+                const s = document.getElementById('sidebar'), o = document.getElementById('overlay');
+                if (force === false) { s.classList.remove('open'); o.style.display='none'; return; }
+                s.classList.toggle('open');
+                o.style.display = s.classList.contains('open') ? 'block' : 'none';
+            },
+
+            navTo(id) {
+                document.querySelectorAll('.page-view').forEach(v => v.classList.add('hidden'));
+                document.getElementById('view-'+id).classList.remove('hidden');
+                document.getElementById('monthNav').classList.toggle('hidden', id === 'settings' || id === 'import');
+                this.toggleSidebar(false);
+            },
+
+            setTab(t) {
+                document.getElementById('sec-cal').classList.toggle('hidden', t!=='cal');
+                document.getElementById('sec-tachy').classList.toggle('hidden', t!=='tachy');
+                document.getElementById('btnCal').classList.toggle('tab-active', t==='cal');
+                document.getElementById('btnTachy').classList.toggle('tab-active', t==='tachy');
+            },
+
+            toggleCycleDayVisibility() {
+                const val = document.getElementById('cycleType').value;
+                document.getElementById('daySelectorGroup').classList.toggle('hidden', val === 'civil');
+            },
+
+            closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        };
     </script>
 </body>
 </html>
