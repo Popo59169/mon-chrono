@@ -107,14 +107,17 @@
                     <p class="text-[8px] font-bold dark:text-white uppercase">Jours Congés</p>
                 </div>
             </div>
+
             <div class="flex gap-2 mb-6">
                 <button id="btnCal" onclick="setTab('cal')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black tab-active uppercase italic shadow-sm">Calendrier</button>
                 <button id="btnTachy" onclick="setTab('tachy')" class="flex-1 py-3 rounded-full bg-white dark:bg-neutral-900 text-[10px] font-black uppercase italic dark:text-white shadow-sm">Tachygraphe</button>
             </div>
+
             <div id="sec-cal" class="glass-card p-5">
                 <div class="grid grid-cols-7 gap-2 mb-2" id="gridHeaders"></div>
                 <div id="grid" class="grid grid-cols-7 gap-2"></div>
             </div>
+
             <div id="sec-tachy" class="hidden glass-card overflow-hidden">
                 <table class="w-full text-[10px] text-left border-collapse">
                     <thead class="bg-neutral-100 dark:bg-neutral-800 text-orange-500 font-black uppercase italic">
@@ -144,10 +147,12 @@
                     <p id="detailPayroll" class="text-[8px] font-bold text-neutral-500 uppercase">---</p>
                 </div>
             </div>
+            
             <div class="space-y-2">
-                <h3 class="text-[10px] font-black uppercase text-neutral-500 italic">Détail des Frais (Cycle choisi)</h3>
+                <h3 class="text-[10px] font-black uppercase text-orange-500 italic">Détail des Frais (Cycle choisi)</h3>
                 <div id="fraisList" class="space-y-2"></div>
             </div>
+
             <div class="space-y-2 pt-4">
                 <h3 class="text-[10px] font-black uppercase text-orange-500 italic">Primes Dimanches & Fériés (Mois Civil)</h3>
                 <div id="primesList" class="space-y-2"></div>
@@ -155,40 +160,58 @@
         </div>
 
         <div id="view-import" class="page-view hidden space-y-6">
-            <div class="glass-card p-6 text-center">
+            <div class="glass-card p-6">
                 <h3 class="text-[10px] font-black uppercase italic mb-4">Importation CSV</h3>
-                <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl p-8 bg-neutral-50 dark:bg-neutral-900 cursor-pointer" onclick="document.getElementById('fileInput').click()">
-                    <span class="text-3xl">📥</span>
-                    <p class="text-[9px] font-bold text-neutral-500 uppercase mt-2">Glisser ou sélectionner CSV</p>
+                <div class="w-full border-2 border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl p-8 flex flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-900 cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <span class="text-3xl mb-2">📥</span>
+                    <p class="text-[9px] font-bold text-neutral-500 uppercase text-center">Sélectionner fichier</p>
                     <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleFileSelect(this)">
                 </div>
-                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic">🗑️ Réinitialiser tout</button>
+                <button onclick="clearAllData()" class="w-full mt-6 py-3 border border-red-900/30 text-red-500 rounded-xl font-black uppercase text-[9px] italic">🗑️ Tout effacer</button>
             </div>
         </div>
 
         <div id="view-settings" class="page-view hidden space-y-6">
             <div class="glass-card p-6 space-y-4">
-                <h3 class="text-orange-500 font-black italic uppercase text-xs">Configuration</h3>
-                
-                <div class="flex flex-col gap-2">
-                    <label class="text-[10px] font-black uppercase text-neutral-500 italic">Plage de frais</label>
-                    <select id="cycleType" onchange="toggleCycleDay()" class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl text-[10px] font-bold dark:text-white border-none">
-                        <option value="civil">Mois Civil (1er au 31)</option>
-                        <option value="prev_curr">Mois Précédent → Actuel</option>
-                        <option value="curr_next">Mois Actuel → Suivant</option>
-                    </select>
-                </div>
-
-                <div id="daySelectorGroup" class="flex justify-between items-center py-2 hidden">
-                    <span class="text-[10px] font-black uppercase italic dark:text-white">Jour charnière (ex: 15)</span>
-                    <input type="number" id="cycleDay" min="1" max="31" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-16 dark:text-white font-bold">
+                <div class="space-y-4">
+                    <h3 class="text-orange-500 font-black italic uppercase text-xs">Apparence</h3>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black uppercase dark:text-white italic">Mode Sombre</span>
+                        <label class="switch">
+                            <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <hr class="opacity-10">
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Unique Nuit</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas (Midi/Soir)</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
-                <div class="flex justify-between items-center"><span class="text-[10px] font-black uppercase text-orange-500 italic">Prime Dimanche/Férié</span><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
-                
+
+                <div class="space-y-4">
+                    <h3 class="text-orange-500 font-black italic uppercase text-xs">FRAIS</h3>
+                    
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] font-black uppercase text-neutral-500 italic">plage de frais</label>
+                        <select id="cycleType" onchange="toggleCycleDay()" class="bg-neutral-100 dark:bg-neutral-900 p-3 rounded-xl text-[10px] font-bold dark:text-white border-none">
+                            <option value="civil">Mois Civil (1er au 31)</option>
+                            <option value="prev_curr">Mois Précédent → Actuel</option>
+                            <option value="curr_next">Mois Actuel → Suivant</option>
+                        </select>
+                    </div>
+
+                    <div id="daySelectorGroup" class="flex justify-between items-center py-2 hidden">
+                        <span class="text-[10px] font-black uppercase italic dark:text-white">Jour charnière (ex: 15)</span>
+                        <input type="number" id="cycleDay" min="1" max="31" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-16 dark:text-white font-bold">
+                    </div>
+
+                    <hr class="border-black/10 dark:border-white/10 my-4">
+                    <h3 class="text-neutral-500 font-black italic uppercase text-[10px] mb-2">Montant des indemnités</h3>
+
+                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Petit Déjeuner</span><input type="number" id="valCasseCroute" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Unique</span><input type="number" id="valRepasNuit" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Repas Jour</span><input type="number" id="valRepasStandard" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                    <div class="flex justify-between items-center py-2"><span class="text-[10px] font-black uppercase dark:text-white italic">Prime Dimanche / Férié</span><input type="number" id="valPrime" step="0.01" class="bg-neutral-100 dark:bg-neutral-900 p-2 rounded text-right w-20 dark:text-white font-bold"></div>
+                </div>
+
                 <button onclick="saveSettings()" class="w-full bg-emerald-700 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg">Enregistrer</button>
             </div>
         </div>
@@ -209,7 +232,7 @@
         let curY = now.getFullYear();
         
         let settings = JSON.parse(localStorage.getItem('monChrono_settings')) || { 
-            cycleType: 'civil', cycleDay: 15, cumulSoirNuit: false,
+            cycleType: 'civil', cycleDay: 15,
             tarifs: { casseCroute: 8.87, repasNuit: 9.81, repasStandard: 16.36, prime: 40.00 }
         };
         
@@ -217,6 +240,12 @@
         const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
         function p2(n) { return String(n).padStart(2, '0'); }
+
+        function toggleTheme() {
+            const isDark = document.getElementById('themeToggle').checked;
+            document.documentElement.classList.toggle('dark', isDark);
+            localStorage.setItem('monChrono_theme', isDark ? 'dark' : 'light');
+        }
 
         function toggleCycleDay() {
             const type = document.getElementById('cycleType').value;
@@ -264,6 +293,7 @@
             const hDebut = parseInt(poste[0].heure.split(':')[0]);
             let couvreMidi = false, couvreSoir = false, nMinutes = 0;
             let tags = []; let m = 0;
+            
             poste.forEach(a => {
                 if (a.type !== 'repos') {
                     nMinutes += calculerMinutesDansPlage(a.timestamp, a.dureeMinutes, 22, 7);
@@ -271,19 +301,35 @@
                     if (verifieCouverture(a.timestamp, a.dureeMinutes, 18, 45, 21, 15)) couvreSoir = true;
                 }
             });
+
             if (couvreMidi) { tags.push("Midi"); m += settings.tarifs.repasStandard; }
             if (couvreSoir) { tags.push("Soir"); m += settings.tarifs.repasStandard; }
-            if ((settings.cumulSoirNuit || !couvreSoir) && nMinutes >= 240) { tags.push("Unique Nuit"); m += settings.tarifs.repasNuit; }
-            if (hDebut < 5) { tags.push("Casse-croûte"); m += settings.tarifs.casseCroute; }
+            
+            const aDroitRepasUnique = (nMinutes >= 240);
+            if (aDroitRepasUnique) { 
+                tags.push("Repas Unique"); 
+                m += settings.tarifs.repasNuit; 
+            }
+            
+            if (hDebut < 5 && !aDroitRepasUnique) { 
+                tags.push("Petit Déjeuner"); 
+                m += settings.tarifs.casseCroute; 
+            }
+            
             return { label: tags.join(' + '), montant: m };
         }
 
         function initApp() {
+            const savedTheme = localStorage.getItem('monChrono_theme') || 'light';
+            document.getElementById('themeToggle').checked = (savedTheme === 'dark');
+            document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+
             document.getElementById('currentMonthDisplay').innerText = moisNoms[curM] + " " + curY;
             document.getElementById('labelAnnee').innerText = "Année " + curY;
             
             document.getElementById('cycleType').value = settings.cycleType;
             document.getElementById('cycleDay').value = settings.cycleDay;
+            document.getElementById('valCasseCroute').value = settings.tarifs.casseCroute;
             document.getElementById('valRepasNuit').value = settings.tarifs.repasNuit;
             document.getElementById('valRepasStandard').value = settings.tarifs.repasStandard;
             document.getElementById('valPrime').value = settings.tarifs.prime;
@@ -319,6 +365,7 @@
                     sMonth += sJ; nMonth += nJ;
                     const cF = determinerFrais(poste);
                     fMonth += cF.montant;
+                    
                     grid.innerHTML += `<div class="day-box worked" onclick="showHeures(${d},'${Math.floor(sJ/60)}h${p2(sJ%60)}','${Math.floor(nJ/60)}h${p2(nJ%60)}')">${d}</div>`;
                     tBody.innerHTML += `<tr class="border-b border-black/5 dark:border-white/5"><td class="p-3 opacity-50">${p2(d)}/${p2(curM+1)}</td><td class="p-3 font-black">${Math.floor(sJ/60)}h${p2(sJ%60)}</td><td class="p-3 text-blue-500 font-black">${Math.floor(nJ/60)}h${p2(nJ%60)}</td><td class="p-3 text-emerald-600 font-black">${cF.montant.toFixed(2)}€</td></tr>`;
                     
@@ -344,9 +391,13 @@
                     }
                 }
                 if(dt >= civilStart && dt <= civilEnd) {
-                    if(dt.getDay() === 0 || estJourFerie(dt)) {
+                    let labelPrime = "";
+                    if(estJourFerie(dt)) labelPrime = "Départ Jour Férié";
+                    else if(dt.getDay() === 0) labelPrime = "Départ Dimanche";
+
+                    if(labelPrime !== "") {
                         sumP += settings.tarifs.prime;
-                        pList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">Départ Dimanche/Férié</p></div><p class="text-xl font-black text-orange-500">${settings.tarifs.prime.toFixed(2)}€</p></div>`;
+                        pList.innerHTML += `<div class="glass-card p-4 flex justify-between items-center border-l-4 border-orange-500"><div><p class="text-[8px] font-black text-neutral-500 uppercase">${k}</p><p class="text-xs font-bold dark:text-white">${labelPrime}</p></div><p class="text-xl font-black text-orange-500">${settings.tarifs.prime.toFixed(2)}€</p></div>`;
                     }
                 }
             });
@@ -360,12 +411,14 @@
 
         function saveSettings() {
             settings.cycleType = document.getElementById('cycleType').value;
-            settings.cycleDay = parseInt(document.getElementById('cycleDay').value);
-            settings.tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value);
-            settings.tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value);
-            settings.tarifs.prime = parseFloat(document.getElementById('valPrime').value);
+            settings.cycleDay = parseInt(document.getElementById('cycleDay').value) || 15;
+            settings.tarifs.casseCroute = parseFloat(document.getElementById('valCasseCroute').value) || 0;
+            settings.tarifs.repasNuit = parseFloat(document.getElementById('valRepasNuit').value) || 0;
+            settings.tarifs.repasStandard = parseFloat(document.getElementById('valRepasStandard').value) || 0;
+            settings.tarifs.prime = parseFloat(document.getElementById('valPrime').value) || 0;
             localStorage.setItem('monChrono_settings', JSON.stringify(settings));
-            initApp(); alert("Paramètres enregistrés !");
+            initApp();
+            alert("Réglages enregistrés !");
         }
 
         function handleFileSelect(input) {
@@ -409,7 +462,24 @@
         function toggleConge(d) { if (listeConges.includes(d)) { listeConges = listeConges.filter(x => x !== d); } else { listeConges.push(d); } localStorage.setItem('monChrono_conges', JSON.stringify(listeConges)); initApp(); }
         function closeModal() { document.getElementById('dayModal').classList.add('hidden'); }
         function clearAllData() { if(confirm("Effacer tout ?")) { localStorage.clear(); location.reload(); } }
-        function showHeures(d, s, n) { document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM]; document.getElementById('modalBody').innerHTML = `<p class="dark:text-white font-black">Service: ${s}</p><p class="text-blue-500 font-black">Nuit: ${n}</p>`; document.getElementById('dayModal').classList.remove('hidden'); }
+        
+        // MODIFICATION ICI : "Temps de service"
+        function showHeures(d, s, n) { 
+            document.getElementById('modalDate').innerText = p2(d) + " " + moisNoms[curM]; 
+            document.getElementById('modalBody').innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-neutral-500 italic">Temps de service</p>
+                        <p class="dark:text-white font-black text-xl italic uppercase">${s}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-blue-500 italic">Temps de Nuit</p>
+                        <p class="text-blue-500 font-black text-xl italic uppercase">${n}</p>
+                    </div>
+                </div>`; 
+            document.getElementById('dayModal').classList.remove('hidden'); 
+        }
+
         function showTimelineFromData(d, segments) {
             document.getElementById('modalDate').innerText = "Détail du " + p2(d) + " " + moisNoms[curM];
             let html = '<div class="space-y-3">';
